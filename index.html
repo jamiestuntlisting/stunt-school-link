@@ -392,7 +392,6 @@ function setupTouch() {
   }, {passive:false});
 }
 
-// Auto-start after splash fades (splash fades in 1.5s, holds, fades out at 3.5s over 1.2s)
 function startGame() {
   if (gameStarted) return;
   gameStarted = true;
@@ -402,14 +401,9 @@ function startGame() {
   setupTouch();
 }
 
-// Auto-start after splash fades out (4s delay + 1.2s fade = 5.2s)
-setTimeout(startGame, 5200);
-
-// Also allow tap/click/key to skip the splash early
+// Splash/startup logic deferred to after all declarations (see bottom of script)
 function skipSplash() {
   if (gameStarted) return;
-  initAudio();
-  playMusic();
   startGame();
 }
 document.getElementById('title-screen').addEventListener('click', skipSplash);
@@ -417,36 +411,44 @@ document.getElementById('title-screen').addEventListener('touchstart', e => { e.
 window.addEventListener('keydown', function splashKey(e) {
   if (!gameStarted) { skipSplash(); window.removeEventListener('keydown', splashKey); }
 });
-// Start music on first interaction after auto-start
+// Music on by default - start on first interaction (browser requires user gesture)
 document.addEventListener('click', function firstClick() {
-  if (gameStarted && !musicPlaying) { initAudio(); playMusic(); }
-  document.removeEventListener('click', firstClick);
+  if (!musicPlaying) { initAudio(); playMusic(); }
 }, {once:true});
 document.addEventListener('touchstart', function firstTouch() {
-  if (gameStarted && !musicPlaying) { initAudio(); playMusic(); }
-  document.removeEventListener('touchstart', firstTouch);
+  if (!musicPlaying) { initAudio(); playMusic(); }
+}, {once:true});
+document.addEventListener('keydown', function firstKey() {
+  if (!musicPlaying) { initAudio(); playMusic(); }
 }, {once:true});
 
 // ---- PLAYER ----
-let enteringBuilding = false; // locks controls when walking into a door
+let enteringBuilding = false;
+let returnAnim = null; // {type, timer} for return animations
+let hasSunglasses = false;
 
 // Spawn position: check localStorage for returning from a building
 function getSpawnPos() {
   const lastBuilding = localStorage.getItem('stuntschool_lastbuilding');
   if (lastBuilding) {
     localStorage.removeItem('stuntschool_lastbuilding');
-    // Spawn outside the door of the building they just visited
     const spawns = {
       'stairfalls': { x: 4 * TILE, y: 8 * TILE, dir: 0 },
       'fireburns':  { x: 12 * TILE, y: 8 * TILE, dir: 0 },
       'highfalls':  { x: 4 * TILE, y: 21 * TILE, dir: 3 },
       'stuntcoord': { x: 12 * TILE, y: 21 * TILE, dir: 3 }
     };
+    // Set return animation based on which building
+    if (lastBuilding === 'stairfalls') returnAnim = { type: 'tumble', timer: 90 };
+    else if (lastBuilding === 'fireburns') returnAnim = { type: 'onfire', timer: 120 };
+    else if (lastBuilding === 'highfalls') returnAnim = { type: 'hardfall', timer: 80 };
+    else if (lastBuilding === 'stuntcoord') { returnAnim = { type: 'cool', timer: 60 }; hasSunglasses = true; }
     if (spawns[lastBuilding]) return spawns[lastBuilding];
   }
   return { x: 8 * TILE, y: 13.5 * TILE, dir: 0 };
 }
 const spawn = getSpawnPos();
+const isReturning = returnAnim !== null;
 
 const player = {
   x: spawn.x, y: spawn.y,
@@ -1313,23 +1315,50 @@ function drawBuilding(b) {
     }
   }
 
-  // Sign always at the top of the building
-  const signY = y - 32;
-  const signW = Math.max(w+20, 70);
-  const signX = x+w/2-signW/2;
-  ctx.fillStyle = 'rgba(0,0,0,0.85)';
-  ctx.fillRect(signX, signY, signW, 20);
-  // Sign border
-  ctx.fillStyle = b.accent;
-  ctx.fillRect(signX, signY, signW, 2);
-  ctx.fillRect(signX, signY+18, signW, 2);
-  ctx.fillRect(signX, signY, 2, 20);
-  ctx.fillRect(signX+signW-2, signY, 2, 20);
-  // Text
-  ctx.fillStyle = b.accent;
+  // Per-building label positioning
   ctx.font = 'bold 11px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText(b.name, x+w/2, signY+14);
+
+  if (b.special === 'stairs') {
+    // 45 degree angle label
+    ctx.save();
+    ctx.translate(x + w/2, y + h/2);
+    ctx.rotate(-Math.PI/4);
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(-40, -12, 80, 20);
+    ctx.fillStyle = b.accent;
+    ctx.fillRect(-40, -12, 80, 2);
+    ctx.fillRect(-40, 6, 80, 2);
+    ctx.fillText(b.name, 0, 3);
+    ctx.restore();
+  } else if (b.special === 'fire') {
+    // Mid-building
+    const signY = y + h/2 - 10;
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(x-6, signY, w+12, 20);
+    ctx.fillStyle = b.accent;
+    ctx.fillRect(x-6, signY, w+12, 2);
+    ctx.fillRect(x-6, signY+18, w+12, 2);
+    ctx.fillText(b.name, x+w/2, signY+14);
+  } else if (b.special === 'office') {
+    // At the base of his hairline (where forehead meets hair)
+    const signY = y + 28;
+    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    ctx.fillRect(x+2, signY, w-4, 18);
+    ctx.fillStyle = b.accent;
+    ctx.fillRect(x+2, signY, w-4, 2);
+    ctx.fillRect(x+2, signY+16, w-4, 2);
+    ctx.fillText(b.name, x+w/2, signY+13);
+  } else {
+    // Tower/High Falls - on the building face
+    const signY = y + 6;
+    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    ctx.fillRect(x+4, signY, w-8, 18);
+    ctx.fillStyle = b.accent;
+    ctx.fillRect(x+4, signY, w-8, 2);
+    ctx.fillRect(x+4, signY+16, w-8, 2);
+    ctx.fillText(b.name, x+w/2, signY+13);
+  }
 
   // Light spilling out of the doorway
   const lightColor = b.special === 'fire' ? [255, 140, 40] : [255, 220, 140];
@@ -1389,6 +1418,93 @@ function drawPlayer() {
   ctx.fillStyle = '#4a2a1a';
   ctx.fillRect(x+3, y+22+bobY, 5, 3);
   ctx.fillRect(x+12, y+22+bobY, 5, 3);
+
+  // Sunglasses (permanent after visiting coordinator)
+  if (hasSunglasses && dir !== 3) {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(x+5, y+3+bobY, 4, 3);
+    ctx.fillRect(x+11, y+3+bobY, 4, 3);
+    ctx.fillStyle = '#aa7722';
+    ctx.fillRect(x+5, y+3+bobY, 4, 1);
+    ctx.fillRect(x+11, y+3+bobY, 4, 1);
+    ctx.fillRect(x+9, y+4+bobY, 2, 1);
+  }
+
+  // Return animations
+  if (returnAnim && returnAnim.timer > 0) {
+    returnAnim.timer--;
+    const t = returnAnim.timer;
+
+    if (returnAnim.type === 'tumble') {
+      // Rolling down stairs - spin and stars
+      ctx.save();
+      ctx.translate(x+10, y+12);
+      ctx.rotate(t * 0.15);
+      ctx.fillStyle = '#ffdb58';
+      for (let i=0;i<3;i++) {
+        const sx = Math.sin(t*0.2+i*2.1)*16;
+        const sy = Math.cos(t*0.2+i*2.1)*12;
+        ctx.fillRect(sx-1, sy-1, 3, 3);
+      }
+      ctx.restore();
+    } else if (returnAnim.type === 'onfire') {
+      // On fire! Flames around the player
+      for (let i=0;i<6;i++) {
+        const fx = x-4+Math.sin(frame*0.3+i*1.1)*14+4;
+        const fy = y-2+Math.sin(frame*0.4+i*1.7)*6;
+        const fh = 6+Math.sin(frame*0.2+i)*4;
+        ctx.fillStyle = t > 60 ? '#ff4400' : (t > 30 ? '#ff8800' : '#ffcc44');
+        ctx.fillRect(fx, fy-fh, 4, fh);
+        ctx.fillStyle = '#ffcc00';
+        ctx.fillRect(fx+1, fy-fh+2, 2, fh-3);
+      }
+      // Smoke when dying down
+      if (t < 40) {
+        ctx.fillStyle = `rgba(80,80,80,${t/80})`;
+        for (let i=0;i<3;i++) {
+          ctx.beginPath();
+          ctx.arc(x+10+Math.sin(frame*0.05+i)*8, y-8-i*8, 4+i*2, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+    } else if (returnAnim.type === 'hardfall') {
+      // Hard fall - screen shake and impact stars
+      if (t > 60) {
+        // Falling from above
+        const fallOff = (t-60)*3;
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.ellipse(x+10, y+25, 8+fallOff/4, 3, 0, 0, Math.PI*2);
+        ctx.fill();
+      } else if (t > 40) {
+        // Impact - shake
+        const shake = Math.sin(t*2)*3;
+        ctx.fillStyle = '#ffdb58';
+        ctx.fillRect(x-8+shake, y+20, 4, 4);
+        ctx.fillRect(x+18-shake, y+18, 4, 4);
+        ctx.fillRect(x+6, y+26+shake, 3, 3);
+        // Impact lines
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(x-6, y+22, 6, 1);
+        ctx.fillRect(x+20, y+22, 6, 1);
+      } else {
+        // Shaking it off - dizzy stars
+        ctx.fillStyle = '#ffdb58';
+        const s = Math.sin(t*0.3)*8;
+        ctx.fillRect(x-4+s, y-4, 3, 3);
+        ctx.fillRect(x+16-s, y-6, 3, 3);
+      }
+    } else if (returnAnim.type === 'cool') {
+      // Cool entrance - sparkle around sunglasses
+      if (t > 30) {
+        ctx.fillStyle = '#fff';
+        const sp = Math.sin(t*0.3)*6;
+        ctx.fillRect(x+2+sp, y+2+bobY, 2, 2);
+        ctx.fillRect(x+16-sp, y+1+bobY, 2, 2);
+        ctx.fillRect(x+10, y-2+Math.abs(sp)/2+bobY, 2, 2);
+      }
+    }
+  }
 }
 
 function drawNPC(npc) {
@@ -1809,6 +1925,7 @@ function checkProximity() {
 // ---- UPDATE ----
 function update() {
   if (!gameStarted || dialogueActive || enteringBuilding) return;
+  if (returnAnim && returnAnim.timer > 40) return; // freeze during dramatic part of return anim
   player.moving = false;
   let dx = 0, dy = 0;
 
@@ -1898,6 +2015,14 @@ function gameLoop() {
 }
 
 gameLoop();
+
+// ---- STARTUP (after all declarations) ----
+if (isReturning) {
+  document.getElementById('title-screen').style.display = 'none';
+  startGame();
+} else {
+  setTimeout(startGame, 5200);
+}
 </script>
 </body>
 </html>
