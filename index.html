@@ -396,26 +396,24 @@ for (let y = 0; y < MAP_H; y++) {
 
 function setTile(x, y, t) { if (map[y] && map[y][x] !== undefined) map[y][x] = t; }
 
-// Main vertical path down the center
+// Main cross-shaped path
 for (let y = 1; y < MAP_H-1; y++) { setTile(5, y, 1); setTile(6, y, 1); }
-// Horizontal paths to buildings
-for (let x = 2; x < 5; x++) { setTile(x, 4, 1); setTile(x, 9, 1); setTile(x, 14, 1); }
-for (let x = 7; x < 10; x++) { setTile(x, 4, 1); setTile(x, 9, 1); setTile(x, 14, 1); }
-// Extra horizontal connector
-for (let x = 1; x < MAP_W-1; x++) { setTile(x, 9, 1); }
+for (let x = 1; x < MAP_W-1; x++) { setTile(x, 10, 1); setTile(x, 11, 1); }
+// Paths to corners
+for (let x = 1; x < 5; x++) { setTile(x, 4, 1); setTile(x, 16, 1); }
+for (let x = 7; x < 10; x++) { setTile(x, 4, 1); setTile(x, 16, 1); }
 
-// Water pond
-setTile(1, 17, 3); setTile(2, 17, 3); setTile(1, 18, 3); setTile(2, 18, 3);
+// Water pond (center-ish decoration)
+setTile(2, 8, 3); setTile(3, 8, 3); setTile(2, 9, 3); setTile(3, 9, 3);
 
-// Flowers
-setTile(8, 7, 4); setTile(9, 8, 4); setTile(2, 12, 4); setTile(3, 11, 4);
-setTile(8, 16, 4); setTile(9, 17, 4); setTile(1, 6, 4); setTile(2, 7, 4);
+// Flowers scattered around center
+setTile(8, 8, 4); setTile(9, 9, 4); setTile(1, 12, 4); setTile(2, 13, 4);
+setTile(8, 12, 4); setTile(9, 13, 4); setTile(1, 7, 4);
 
 // Dark grass
-setTile(8, 2, 5); setTile(9, 2, 5); setTile(9, 3, 5);
-setTile(1, 15, 5); setTile(2, 15, 5); setTile(1, 16, 5);
+setTile(8, 6, 5); setTile(9, 7, 5); setTile(1, 14, 5); setTile(2, 14, 5);
 
-// ---- BUILDINGS (doors face the path) ----
+// ---- BUILDINGS in corners (doors face center) ----
 const buildings = [
   {
     name: 'HIGH FALLS',
@@ -435,16 +433,16 @@ const buildings = [
   },
   {
     name: 'STAIR FALLS',
-    x: 1, y: 6, w: 3, h: 3,
-    doorX: 2, doorY: 6, doorSide: 'top',
+    x: 1, y: 15, w: 4, h: 4,
+    doorX: 3, doorY: 15, doorSide: 'top',
     url: 'https://pro-stair-faller.vercel.app/',
     color: '#6b5b45', roofColor: '#4a3f30', accent: '#c4a76c',
     special: 'stairs'
   },
   {
     name: 'STUNT COORD',
-    x: 7, y: 6, w: 3, h: 3,
-    doorX: 8, doorY: 6, doorSide: 'top',
+    x: 7, y: 15, w: 3, h: 4,
+    doorX: 8, doorY: 15, doorSide: 'top',
     url: 'https://coordinator-please.vercel.app/',
     color: '#2d5a27', roofColor: '#1a3d16', accent: '#90c948',
     special: 'office'
@@ -456,7 +454,7 @@ const buildings = [
 const npcs = [
   {
     name: 'Injured Ian',
-    x: 4 * TILE + 8, y: 9 * TILE + 8,
+    x: 3 * TILE + 8, y: 10 * TILE + 8,
     w: 28, h: 16,
     type: 'lying',
     rounds: [
@@ -482,7 +480,7 @@ const npcs = [
   },
   {
     name: 'Old Pete - Veteran Coordinator',
-    x: 7 * TILE + 8, y: 10 * TILE + 8,
+    x: 7 * TILE + 8, y: 7 * TILE,
     w: 24, h: 28,
     type: 'old',
     rounds: [
@@ -508,7 +506,7 @@ const npcs = [
   },
   {
     name: 'Jittery Jeff',
-    x: 2 * TILE, y: 13 * TILE,
+    x: 2 * TILE, y: 6 * TILE,
     w: 24, h: 28,
     type: 'jittery',
     rounds: [
@@ -534,7 +532,7 @@ const npcs = [
   },
   {
     name: 'Tommy Crews',
-    x: 8 * TILE, y: 14 * TILE,
+    x: 8 * TILE, y: 12 * TILE,
     w: 24, h: 28,
     type: 'doug',
     rounds: [
@@ -560,7 +558,7 @@ const npcs = [
   },
   {
     name: 'Gate Guard Gary',
-    x: 4 * TILE + 16, y: 17 * TILE + 8,
+    x: 5 * TILE, y: 13 * TILE,
     w: 24, h: 28,
     type: 'guard',
     rounds: [
@@ -586,7 +584,7 @@ const npcs = [
   },
   {
     name: 'Resume Rachel',
-    x: 3 * TILE, y: 16 * TILE,
+    x: 2 * TILE, y: 12 * TILE,
     w: 24, h: 28,
     type: 'rachel',
     rounds: [
@@ -716,123 +714,293 @@ function drawBuilding(b) {
   const x = b.x*TILE, y = b.y*TILE, w = b.w*TILE, h = b.h*TILE;
   const doorAtTop = b.doorSide === 'top';
 
-  // Shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.2)';
-  ctx.fillRect(x+3, y+3, w, h);
-
-  // Main body
-  ctx.fillStyle = b.color;
-  ctx.fillRect(x, y, w, h);
-
-  // Roof
-  if (doorAtTop) {
-    // Roof at bottom (building faces up)
-    ctx.fillStyle = b.roofColor;
-    ctx.fillRect(x-3, y+h-4, w+6, 10);
-    ctx.fillRect(x+6, y+h+4, w-12, 6);
-  } else {
-    // Roof at top (building faces down)
-    ctx.fillStyle = b.roofColor;
-    ctx.fillRect(x-3, y-6, w+6, 12);
-    ctx.fillRect(x+6, y-10, w-12, 6);
-  }
-
-  // Special details
+  // Each building has a completely unique look
   switch(b.special) {
+
     case 'tower': {
-      // Tower spire on top
+      // HIGH FALLS: Open courtyard with a very tall tower
+      // Courtyard walls (low, open feel)
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fillRect(x+4, y+4, w, h);
+      // Courtyard floor (sandy/open)
+      ctx.fillStyle = '#b8a882';
+      ctx.fillRect(x, y, w, h);
+      // Low walls around courtyard (not solid - open feel)
+      ctx.fillStyle = '#6080aa';
+      ctx.fillRect(x, y, w, 4); // top wall
+      ctx.fillRect(x, y, 4, h); // left wall
+      ctx.fillRect(x+w-4, y, 4, h); // right wall
+      if (!doorAtTop) ctx.fillRect(x, y+h-4, w, 4); // bottom wall (gap for door)
+      else ctx.fillRect(x, y, w, 4);
+      // THE TOWER - tall and imposing, rising from center of courtyard
+      const tx = x + w/2 - 12, ty = y - 48;
+      // Tower shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fillRect(tx+4, y+8, 24, h-12);
+      // Tower body
       ctx.fillStyle = '#3a5a8c';
-      ctx.fillRect(x+w/2-8, y-22, 16, 16);
+      ctx.fillRect(tx, ty + 10, 24, h + 38);
+      // Tower darker side for depth
       ctx.fillStyle = '#2c4a7c';
-      ctx.fillRect(x+w/2-10, y-26, 20, 6);
-      ctx.fillStyle = b.accent;
-      for (let i=0;i<3;i++) ctx.fillRect(x+w/2-4, y-20+i*5, 8, 2);
-      // Platforms on sides
-      ctx.fillStyle = '#5a7aaa';
-      ctx.fillRect(x-6, y+14, 10, 3);
-      ctx.fillRect(x+w-4, y+8, 10, 3);
-      // Down arrow
-      ctx.fillStyle = b.accent;
-      ctx.fillRect(x+w/2-1, y+16, 3, 16);
-      ctx.fillRect(x+w/2-4, y+28, 9, 3);
+      ctx.fillRect(tx+18, ty+10, 6, h+38);
+      // Tower top crenellations
+      ctx.fillStyle = '#4a6fa5';
+      for (let i=0;i<4;i++) ctx.fillRect(tx+i*7, ty+4, 5, 8);
+      // Tower peak/spire
+      ctx.fillStyle = '#7ec8e3';
+      ctx.fillRect(tx+8, ty-8, 8, 14);
+      ctx.fillRect(tx+10, ty-14, 4, 8);
+      // Height markers on tower
+      ctx.fillStyle = '#7ec8e3';
+      for (let i=0;i<5;i++) {
+        ctx.fillRect(tx+2, ty+18+i*10, 8, 1);
+        // Numbers
+        ctx.fillStyle = '#c0ddf0';
+        ctx.font = '6px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${50-i*10}ft`, tx+2, ty+17+i*10);
+        ctx.fillStyle = '#7ec8e3';
+      }
+      // Tower windows (lit up)
+      ctx.fillStyle = '#ffdd88';
+      ctx.fillRect(tx+6, ty+20, 5, 6);
+      ctx.fillRect(tx+14, ty+36, 5, 6);
+      ctx.fillRect(tx+6, ty+50, 5, 6);
+      // Crash mat at base inside courtyard
+      ctx.fillStyle = '#4466cc';
+      ctx.fillRect(x+8, y+h-20, w-16, 12);
+      ctx.fillStyle = '#5577dd';
+      ctx.fillRect(x+10, y+h-18, w-20, 8);
+      // X marks the landing spot
+      ctx.fillStyle = '#ff4444';
+      ctx.fillRect(x+w/2-6, y+h-16, 12, 2);
+      ctx.fillRect(x+w/2-1, y+h-21, 2, 12);
+      // Door
+      const dy1 = doorAtTop ? y-4 : y+h-12;
+      ctx.fillStyle = '#3a2a1a';
+      ctx.fillRect(x+w/2-7, dy1, 14, 14);
+      ctx.fillStyle = '#5a4a3a';
+      ctx.fillRect(x+w/2-5, dy1+2, 10, 10);
+      ctx.fillStyle = '#e8c170';
+      ctx.fillRect(x+w/2+2, dy1+6, 2, 2);
       break;
     }
+
     case 'fire': {
-      const flk = Math.sin(frame*0.15)*3;
+      // FIRE BURNS: The building is ON FIRE
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.fillRect(x+3, y+3, w, h);
+      // Charred/dark building body
+      ctx.fillStyle = '#3a1a0a';
+      ctx.fillRect(x, y, w, h);
+      // Scorched brick pattern
+      ctx.fillStyle = '#4a2010';
+      for (let by=0;by<h;by+=6) for (let bx=0;bx<w;bx+=8) {
+        ctx.fillRect(x+bx+((by/6)%2)*4, y+by, 7, 5);
+      }
+      // Broken/melted windows
+      ctx.fillStyle = '#ff6600';
+      ctx.fillRect(x+6, y+10, 8, 8);
+      ctx.fillRect(x+w-14, y+12, 8, 8);
+      ctx.fillStyle = '#ffaa00';
+      ctx.fillRect(x+7, y+11, 4, 4);
+      ctx.fillRect(x+w-13, y+13, 4, 4);
+      // MASSIVE ANIMATED FLAMES covering the roof
+      for (let i=0;i<6;i++) {
+        const fx = x + 4 + i*(w/6);
+        const fh = 12 + Math.sin(frame*0.12+i*1.5)*6;
+        const fh2 = 8 + Math.sin(frame*0.18+i*2.1)*4;
+        const fh3 = 5 + Math.sin(frame*0.22+i*0.8)*3;
+        // Outer flame (red)
+        ctx.fillStyle = '#dd2200';
+        ctx.fillRect(fx, y-fh, 10, fh+4);
+        // Mid flame (orange)
+        ctx.fillStyle = '#ff6600';
+        ctx.fillRect(fx+2, y-fh2-4, 6, fh2+4);
+        // Inner flame (yellow)
+        ctx.fillStyle = '#ffcc00';
+        ctx.fillRect(fx+3, y-fh3-2, 4, fh3);
+        // White hot tips
+        ctx.fillStyle = '#fff4cc';
+        ctx.fillRect(fx+4, y-fh3-4, 2, 3);
+      }
+      // Side flames licking out of windows
+      const sf = Math.sin(frame*0.2)*4;
       ctx.fillStyle = '#ff4400';
-      ctx.fillRect(x+8, y-14+flk, 8, 10);
-      ctx.fillRect(x+w-18, y-18-flk, 8, 12);
+      ctx.fillRect(x-4-sf, y+10, 6+sf, 8);
+      ctx.fillRect(x+w+sf, y+12, 6-sf, 6);
+      // Smoke rising
+      ctx.fillStyle = 'rgba(60,60,60,0.25)';
+      for (let i=0;i<3;i++) {
+        const sy = y-20-i*14-Math.sin(frame*0.03+i)*6;
+        const sx = x+w/2-8+Math.sin(frame*0.04+i*2)*8;
+        ctx.beginPath();
+        ctx.arc(sx+8, sy, 8+i*3, 0, Math.PI*2);
+        ctx.fill();
+      }
+      // Ember particles
       ctx.fillStyle = '#ff8800';
-      ctx.fillRect(x+10, y-10+flk, 4, 5);
-      ctx.fillRect(x+w-16, y-12-flk, 4, 6);
+      for (let i=0;i<5;i++) {
+        const ex = x+Math.sin(frame*0.07+i*3)*w/2+w/2;
+        const ey = y-10-((frame*0.8+i*20)%50);
+        ctx.fillRect(ex, ey, 2, 2);
+      }
+      // Scorch marks on ground around building
+      ctx.fillStyle = 'rgba(30,15,0,0.3)';
+      ctx.fillRect(x-6, y+h, w+12, 6);
+      // Door (fireproof, metal)
+      const dy2 = doorAtTop ? y-4 : y+h-12;
+      ctx.fillStyle = '#666';
+      ctx.fillRect(x+w/2-7, dy2, 14, 14);
+      ctx.fillStyle = '#888';
+      ctx.fillRect(x+w/2-5, dy2+2, 10, 10);
+      // Warning sign
       ctx.fillStyle = '#ffcc00';
-      ctx.fillRect(x+11, y-8+flk, 2, 3);
-      // Scorch marks
-      ctx.fillStyle = '#2a1500';
-      ctx.fillRect(x+6, y+h-12, 16, 3);
-      ctx.fillRect(x+w-24, y+h-8, 14, 3);
-      // Warning stripes
-      ctx.fillStyle = '#ff4400';
-      for (let i=0;i<2;i++) ctx.fillRect(x+8+i*16, y+12, 8, 3);
+      ctx.fillRect(x+w/2-3, dy2+3, 6, 6);
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(x+w/2-1, dy2+4, 2, 4);
       break;
     }
+
     case 'stairs': {
-      // Stairs on side
-      ctx.fillStyle = b.accent;
-      for (let i=0;i<4;i++) ctx.fillRect(x-4, y+6+i*10, 8+i*3, 3);
-      for (let i=0;i<3;i++) ctx.fillRect(x+w-4-i*3, y+8+i*8, 6+i*3, 3);
-      // Railing
+      // STAIR FALLS: Stairs EVERYWHERE - jutting out in all directions
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fillRect(x+4, y+4, w, h);
+      // Main building body
+      ctx.fillStyle = b.color;
+      ctx.fillRect(x, y, w, h);
+      // Brick pattern
+      ctx.fillStyle = '#5a4a38';
+      for (let by=0;by<h;by+=8) for (let bx=0;bx<w;bx+=10) {
+        ctx.fillRect(x+bx+((by/8)%2)*5, y+by, 9, 7);
+      }
+      // STAIRS going up the left side
+      ctx.fillStyle = '#c4a76c';
+      for (let i=0;i<7;i++) {
+        const sw = 14+i*2;
+        ctx.fillRect(x-sw+12, y+h-8-i*10, sw, 4);
+        ctx.fillStyle = '#a89060';
+        ctx.fillRect(x-sw+12, y+h-6-i*10, sw, 2);
+        ctx.fillStyle = '#c4a76c';
+      }
+      // STAIRS going up the right side
+      for (let i=0;i<5;i++) {
+        const sw = 12+i*2;
+        ctx.fillRect(x+w-12, y+h-6-i*12, sw, 4);
+        ctx.fillStyle = '#a89060';
+        ctx.fillRect(x+w-12, y+h-4-i*12, sw, 2);
+        ctx.fillStyle = '#c4a76c';
+      }
+      // Stairs on the roof going UP further
+      ctx.fillStyle = '#b8985a';
+      for (let i=0;i<4;i++) {
+        ctx.fillRect(x+8+i*6, y-4-i*6, w-16-i*12, 5);
+        ctx.fillStyle = '#a08848';
+        ctx.fillRect(x+8+i*6, y-2-i*6, w-16-i*12, 2);
+        ctx.fillStyle = '#b8985a';
+      }
+      // Railing posts
       ctx.fillStyle = '#8a7a60';
-      ctx.fillRect(x-6, y+4, 3, h-6);
-      // Crash pad
+      ctx.fillRect(x-8, y+2, 3, h+4);
+      ctx.fillRect(x+w+6, y+10, 3, h-6);
+      // Railing horizontal bars
+      ctx.fillStyle = '#7a6a50';
+      for (let i=0;i<3;i++) {
+        ctx.fillRect(x-8, y+4+i*20, 10, 2);
+        ctx.fillRect(x+w+2, y+14+i*16, 10, 2);
+      }
+      // Random stair pieces jutting out of walls
+      ctx.fillStyle = '#c4a76c';
+      ctx.fillRect(x+4, y-8, 20, 4);
+      ctx.fillRect(x+w-20, y+h+2, 16, 4);
+      // Crash pad at bottom
       ctx.fillStyle = '#4466aa';
-      ctx.fillRect(x+10, y+4, w-20, 5);
+      ctx.fillRect(x+6, y+h+6, w-12, 6);
+      // Door
+      const dy3 = doorAtTop ? y-4 : y+h-12;
+      ctx.fillStyle = '#4a3520';
+      ctx.fillRect(x+w/2-7, dy3, 14, 14);
+      ctx.fillStyle = '#6b5530';
+      ctx.fillRect(x+w/2-5, dy3+2, 10, 10);
+      ctx.fillStyle = '#e8c170';
+      ctx.fillRect(x+w/2+2, dy3+6, 2, 2);
       break;
     }
+
     case 'office': {
-      // Clipboard
-      ctx.fillStyle = b.accent;
-      ctx.fillRect(x+w/2-8, y+12, 16, 22);
-      ctx.fillStyle = '#f0e6d0';
-      ctx.fillRect(x+w/2-5, y+16, 10, 14);
+      // STUNT COORDINATOR: Shaped like a baseball hat
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fillRect(x+4, y+4, w+8, h);
+      // Hat BRIM (wide, extending forward)
+      const brimY = doorAtTop ? y-6 : y+h-8;
+      ctx.fillStyle = '#1a4a16';
+      ctx.fillRect(x-10, brimY, w+20, 12);
+      // Brim curve/shadow
+      ctx.fillStyle = '#124010';
+      ctx.fillRect(x-8, brimY+10, w+16, 3);
+      // Hat CROWN (dome shape - the main building)
       ctx.fillStyle = '#2d5a27';
-      for (let i=0;i<3;i++) ctx.fillRect(x+w/2-3, y+19+i*4, 7, 2);
-      // Megaphone
-      ctx.fillStyle = '#d4a574';
-      ctx.fillRect(x+w-12, y+16, 10, 6);
-      ctx.fillRect(x+w-6, y+14, 6, 10);
-      // Star
+      ctx.fillRect(x, y, w, h);
+      // Dome top (rounded with steps)
+      ctx.fillStyle = '#2d5a27';
+      ctx.fillRect(x+4, y-8, w-8, 10);
+      ctx.fillRect(x+10, y-14, w-20, 8);
+      ctx.fillRect(x+16, y-18, w-32, 6);
+      // Hat button on top
+      ctx.fillStyle = '#90c948';
+      ctx.fillRect(x+w/2-4, y-22, 8, 6);
+      // Hat panel lines
+      ctx.fillStyle = '#1a4a16';
+      ctx.fillRect(x+w/2-1, y-18, 2, h+16);
+      ctx.fillRect(x+w/4, y-10, 2, h+8);
+      ctx.fillRect(x+3*w/4, y-10, 2, h+8);
+      // Hat logo/emblem (star badge - coordinator authority)
       ctx.fillStyle = '#ffdb58';
-      ctx.fillRect(x+8, y+16, 5, 5);
+      const ex = x+w/2, ey = y+h/2-2;
+      ctx.fillRect(ex-6, ey, 12, 12);
+      ctx.fillStyle = '#e8c170';
+      ctx.fillRect(ex-4, ey+2, 8, 8);
+      // Star in the badge
+      ctx.fillStyle = '#ffdb58';
+      ctx.fillRect(ex-1, ey+1, 2, 10);
+      ctx.fillRect(ex-4, ey+4, 8, 2);
+      ctx.fillRect(ex-3, ey+3, 2, 2);
+      ctx.fillRect(ex+1, ey+3, 2, 2);
+      ctx.fillRect(ex-3, ey+7, 2, 2);
+      ctx.fillRect(ex+1, ey+7, 2, 2);
+      // "COORD" text on hat
+      ctx.fillStyle = '#f0e6d0';
+      ctx.font = 'bold 7px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('STUNT', x+w/2, y+h-10);
+      ctx.fillText('COORD', x+w/2, y+h-3);
+      // Windows (like eyes on the hat)
+      ctx.fillStyle = '#c0d8f0';
+      ctx.fillRect(x+6, y+10, 8, 8);
+      ctx.fillRect(x+w-14, y+10, 8, 8);
+      // Door
+      const dy4 = doorAtTop ? y-6 : y+h-2;
+      ctx.fillStyle = '#4a3520';
+      ctx.fillRect(x+w/2-7, dy4, 14, 12);
+      ctx.fillStyle = '#6b5530';
+      ctx.fillRect(x+w/2-5, dy4+2, 10, 8);
+      ctx.fillStyle = '#e8c170';
+      ctx.fillRect(x+w/2+2, dy4+4, 2, 2);
       break;
     }
   }
 
-  // Windows
-  const wy = doorAtTop ? y + 10 : y + 16;
-  ctx.fillStyle = '#c0d8f0';
-  ctx.fillRect(x+8, wy, 12, 10);
-  if (w > 3*TILE) ctx.fillRect(x+w-20, wy, 12, 10);
-  // Window cross
-  ctx.fillStyle = b.roofColor;
-  ctx.fillRect(x+13, wy, 2, 10);
-  ctx.fillRect(x+8, wy+4, 12, 2);
-
-  // Door
-  const doorY = doorAtTop ? y - 2 : y + h - 14;
-  ctx.fillStyle = '#4a3520';
-  ctx.fillRect(x+w/2-6, doorY, 12, 14);
-  ctx.fillStyle = '#e8c170';
-  ctx.fillRect(x+w/2+2, doorY+6, 2, 2);
-
-  // Sign
-  const signY = doorAtTop ? y + h + 6 : y - 18;
-  ctx.fillStyle = 'rgba(0,0,0,0.7)';
-  ctx.fillRect(x+2, signY, w-4, 12);
+  // Sign (below for top-facing buildings, above for bottom-facing)
+  const signY = doorAtTop ? y+h+14 : y-26;
+  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  ctx.fillRect(x, signY, w, 14);
   ctx.fillStyle = b.accent;
   ctx.font = 'bold 9px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText(b.name, x+w/2, signY+9);
+  ctx.fillText(b.name, x+w/2, signY+10);
 }
 
 function drawPlayer() {
@@ -894,22 +1062,65 @@ function drawNPC(npc) {
   const x = Math.floor(npc.x), y = Math.floor(npc.y);
   switch(npc.type) {
     case 'lying': {
-      ctx.fillStyle = 'rgba(0,0,0,0.2)';
-      ctx.fillRect(x-2,y+14,32,6);
-      ctx.fillStyle = '#d4a574';
-      ctx.fillRect(x,y+4,28,10);
-      ctx.fillStyle = '#f0c8a0';
-      ctx.fillRect(x-4,y+2,10,10);
+      // Ground mat/stretcher under him
+      ctx.fillStyle = '#446688';
+      ctx.fillRect(x-6, y+6, 38, 18);
+      ctx.fillStyle = '#557799';
+      ctx.fillRect(x-4, y+8, 34, 14);
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.fillRect(x-2, y+20, 32, 4);
+      // Legs (lying flat, extending right)
+      ctx.fillStyle = '#2a2a4a'; // dark pants
+      ctx.fillRect(x+16, y+10, 14, 6);
+      // Boots
+      ctx.fillStyle = '#4a2a1a';
+      ctx.fillRect(x+28, y+10, 5, 6);
+      // Knee brace on one leg
+      ctx.fillStyle = '#cccccc';
+      ctx.fillRect(x+22, y+10, 4, 3);
+      // Body/torso (lying on back)
+      ctx.fillStyle = '#cc3030'; // red stunt suit like player
+      ctx.fillRect(x+4, y+8, 14, 8);
+      // Arms
+      ctx.fillStyle = '#cc3030';
+      ctx.fillRect(x+4, y+6, 4, 4); // arm up
+      ctx.fillRect(x+14, y+16, 6, 3); // arm draped down
+      // Head (facing up/sideways)
+      ctx.fillStyle = '#f0c8a0'; // skin
+      ctx.fillRect(x-4, y+8, 10, 10);
+      // Hair
+      ctx.fillStyle = '#5a3a1a';
+      ctx.fillRect(x-5, y+7, 11, 3);
+      // Face details
+      ctx.fillStyle = '#222';
+      // Dazed spiral eyes
+      ctx.fillRect(x-2, y+12, 2, 1);
+      ctx.fillRect(x-3, y+11, 1, 1);
+      ctx.fillRect(x-1, y+11, 1, 1);
+      ctx.fillRect(x+3, y+12, 2, 1);
+      ctx.fillRect(x+2, y+11, 1, 1);
+      ctx.fillRect(x+4, y+11, 1, 1);
+      // Mouth (grimacing)
+      ctx.fillStyle = '#333';
+      ctx.fillRect(x-1, y+15, 6, 1);
+      ctx.fillRect(x-2, y+14, 1, 1);
+      ctx.fillRect(x+5, y+14, 1, 1);
+      // Bandage on head
       ctx.fillStyle = '#f0f0f0';
-      ctx.fillRect(x-4,y+4,10,2);
-      ctx.fillRect(x+18,y+4,10,4);
-      ctx.fillStyle = '#aa3333';
-      ctx.fillRect(x-2,y+5,2,2); ctx.fillRect(x+2,y+5,2,2);
+      ctx.fillRect(x-5, y+9, 12, 2);
+      // Bandage on arm
+      ctx.fillRect(x+14, y+16, 4, 2);
+      // Ice pack (blue)
+      ctx.fillStyle = '#66aaee';
+      ctx.fillRect(x+6, y+6, 6, 4);
+      // Stars spinning around head
       ctx.fillStyle = '#ffdb58';
-      const s = Math.sin(frame*0.08)*4;
-      ctx.fillRect(x-6+s,y-2,3,3);
-      ctx.fillRect(x+6-s,y-4,3,3);
-      ctx.fillRect(x,y-6+Math.abs(s)/2,3,3);
+      const s = Math.sin(frame*0.1)*6;
+      const c = Math.cos(frame*0.1)*4;
+      ctx.fillRect(x-6+s, y+4+c, 3, 3);
+      ctx.fillRect(x+8-s, y+2-c, 3, 3);
+      ctx.fillRect(x+1+c, y+1-Math.abs(s)/2, 2, 2);
       break;
     }
     case 'old': {
@@ -1089,18 +1300,18 @@ function drawNPC(npc) {
 
 // ---- DECORATIONS ----
 const decorations = [
-  { type: 'dummy', x: 5*TILE+4, y: 5*TILE },
-  { type: 'dummy', x: 6*TILE+4, y: 5*TILE+16 },
-  { type: 'barrel', x: 9*TILE, y: 12*TILE },
-  { type: 'barrel', x: 9*TILE+16, y: 12*TILE },
-  { type: 'cone', x: 1*TILE+8, y: 9*TILE+8 },
-  { type: 'cone', x: 9*TILE+8, y: 9*TILE+8 },
-  { type: 'sign', x: 5*TILE+4, y: 2*TILE },
-  { type: 'mat', x: 4*TILE, y: 11*TILE },
-  { type: 'lamp', x: 1*TILE, y: 5*TILE },
-  { type: 'lamp', x: 9*TILE, y: 5*TILE },
-  { type: 'lamp', x: 1*TILE, y: 13*TILE },
-  { type: 'lamp', x: 9*TILE, y: 16*TILE },
+  { type: 'dummy', x: 5*TILE+4, y: 7*TILE },
+  { type: 'dummy', x: 6*TILE+4, y: 7*TILE+16 },
+  { type: 'barrel', x: 9*TILE, y: 10*TILE },
+  { type: 'barrel', x: 9*TILE+16, y: 10*TILE },
+  { type: 'cone', x: 1*TILE+8, y: 11*TILE+8 },
+  { type: 'cone', x: 9*TILE+8, y: 11*TILE+8 },
+  { type: 'sign', x: 5*TILE+4, y: 5*TILE+8 },
+  { type: 'mat', x: 4*TILE, y: 9*TILE },
+  { type: 'lamp', x: 5*TILE, y: 5*TILE },
+  { type: 'lamp', x: 6*TILE, y: 5*TILE },
+  { type: 'lamp', x: 5*TILE, y: 14*TILE },
+  { type: 'lamp', x: 6*TILE, y: 14*TILE },
 ];
 
 function drawDecoration(d) {
