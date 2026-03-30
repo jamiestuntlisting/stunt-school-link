@@ -77,23 +77,26 @@ canvas {
 @keyframes pulse { 0%,100%{opacity:0.7} 50%{opacity:1} }
 #title-screen {
   position: fixed; top:0; left:0; width:100%; height:100%;
-  background: #0a0a1a;
+  background: #1a1a1a;
   display: flex; flex-direction: column; justify-content: center; align-items: center;
   z-index: 100;
-  opacity: 0;
-  animation: splashFadeIn 1.5s ease-out forwards, splashFadeOut 1.2s ease-in 3.5s forwards;
+  animation: splashOut 1.2s ease-in 4s forwards;
 }
-@keyframes splashFadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes splashFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes splashOut { from { opacity: 1; } to { opacity: 0; } }
 #title-screen h1 {
   font-family: monospace; font-size: 36px; color: #e8c170;
   text-shadow: 3px 3px 0 #8b4513, 0 0 20px rgba(232,193,112,0.3);
   margin-bottom: 6px; text-align: center;
+  opacity: 0;
+  animation: textIn 1.5s ease-out 0.8s forwards;
 }
 #title-screen h2 {
   font-family: monospace; font-size: 16px; color: #7ec8e3;
   font-weight: normal;
+  opacity: 0;
+  animation: textIn 1.5s ease-out 1.4s forwards;
 }
+@keyframes textIn { from { opacity: 0; } to { opacity: 1; } }
 #music-btn {
   position: absolute; top: 8px; right: 8px; z-index: 50;
   background: rgba(0,0,20,0.8); border: 2px solid #e8c170;
@@ -398,8 +401,8 @@ function startGame() {
   setupTouch();
 }
 
-// Auto-start after splash animation completes (3.5s delay + 1.2s fade = 4.7s)
-setTimeout(startGame, 4700);
+// Auto-start after splash fades out (4s delay + 1.2s fade = 5.2s)
+setTimeout(startGame, 5200);
 
 // Also allow tap/click/key to skip the splash early
 function skipSplash() {
@@ -1655,8 +1658,17 @@ function update() {
 }
 
 // ---- DRAW ----
+const ZOOM = 2;
 function draw() {
   ctx.clearRect(0,0,W,H);
+
+  // Camera follows player, clamped to map edges
+  const camX = Math.max(0, Math.min(player.x + 10 - W/(2*ZOOM), MAP_W*TILE - W/ZOOM));
+  const camY = Math.max(0, Math.min(player.y + 12 - H/(2*ZOOM), MAP_H*TILE - H/ZOOM));
+
+  ctx.save();
+  ctx.scale(ZOOM, ZOOM);
+  ctx.translate(-camX, -camY);
 
   for (let y=0;y<MAP_H;y++) for (let x=0;x<MAP_W;x++) drawTile(x,y);
   decorations.forEach(d => drawDecoration(d));
@@ -1675,10 +1687,12 @@ function draw() {
     }
   });
 
-  // Vignette
-  const g = ctx.createRadialGradient(W/2,H/2,W*0.4,W/2,H/2,W*0.85);
+  ctx.restore();
+
+  // Vignette (drawn in screen space)
+  const g = ctx.createRadialGradient(W/2,H/2,W*0.35,W/2,H/2,W*0.75);
   g.addColorStop(0,'rgba(0,0,0,0)');
-  g.addColorStop(1,'rgba(0,0,0,0.35)');
+  g.addColorStop(1,'rgba(0,0,0,0.3)');
   ctx.fillStyle = g;
   ctx.fillRect(0,0,W,H);
 }
