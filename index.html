@@ -438,7 +438,15 @@ document.addEventListener('keydown', function firstKey() {
 
 // ---- PLAYER ----
 let enteringBuilding = false;
-let enterBuildingAnim = null; // {building, timer, maxTimer, targetX, targetY}
+let enterBuildingAnim = null; // {building, timer, targetX, targetY}
+
+// Fix back button: if browser restores page from bfcache mid-navigation, reset state
+window.addEventListener('pageshow', function(e) {
+  if (e.persisted) {
+    enteringBuilding = false;
+    enterBuildingAnim = null;
+  }
+});
 let returnAnim = null; // {type, timer} for return animations
 let hasSunglasses = false;
 
