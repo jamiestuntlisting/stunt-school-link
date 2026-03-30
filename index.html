@@ -445,11 +445,16 @@ window.addEventListener('pageshow', function(e) {
   if (e.persisted || enteringBuilding) {
     enteringBuilding = false;
     enterBuildingAnim = null;
-    // Hide lingering UI elements
+    // Hide lingering prompts
     const ep = document.getElementById('enter-prompt');
     if (ep) ep.style.display = 'none';
     const ab = document.getElementById('touch-action-btn');
     if (ab) ab.style.display = 'none';
+    // Restore UI that was hidden during building entry
+    const mb = document.getElementById('music-btn');
+    if (mb) mb.style.display = 'block';
+    const jArea = document.getElementById('joystick-area');
+    if (jArea && isTouchDevice) jArea.style.display = 'block';
     // Force redraw to clear the black fade overlay
     if (typeof draw === 'function') draw();
     // Restart game loop in case rAF was killed
@@ -1973,6 +1978,13 @@ function checkProximity() {
       enteringBuilding = true;
       const tagMap = {'STAIR FALLS':'stairfalls','FIRE BURNS':'fireburns','HIGH FALLS':'highfalls','STUNT COORD':'stuntcoord'};
       localStorage.setItem('stuntschool_lastbuilding', tagMap[b.name] || '');
+      // Hide all UI immediately
+      ep.style.display = 'none';
+      document.getElementById('music-btn').style.display = 'none';
+      const abtn = document.getElementById('touch-action-btn');
+      if (abtn) abtn.style.display = 'none';
+      const jArea = document.getElementById('joystick-area');
+      if (jArea) jArea.style.display = 'none';
       // Target: just past the door (1.5 tiles into building), not the center
       const targetX = b.doorX * TILE - 10;
       const targetY = b.doorSide === 'bottom'
