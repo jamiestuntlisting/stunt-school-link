@@ -1956,13 +1956,15 @@ function checkProximity() {
       enteringBuilding = true;
       const tagMap = {'STAIR FALLS':'stairfalls','FIRE BURNS':'fireburns','HIGH FALLS':'highfalls','STUNT COORD':'stuntcoord'};
       localStorage.setItem('stuntschool_lastbuilding', tagMap[b.name] || '');
-      // Target: center of the building
-      const targetX = (b.x + b.w/2) * TILE - 10;
-      const targetY = (b.y + b.h/2) * TILE - 12;
-      // Set direction toward building center
+      // Target: just past the door (1.5 tiles into building), not the center
+      const targetX = b.doorX * TILE - 10;
+      const targetY = b.doorSide === 'bottom'
+        ? (b.doorY - 1.5) * TILE  // walk up into building
+        : (b.doorY + 1.5) * TILE; // walk down into building
+      // Set direction toward building
       if (b.doorSide === 'bottom') player.dir = 3; // face up
       else player.dir = 0; // face down
-      enterBuildingAnim = { building: b, timer: 0, maxTimer: 50, targetX, targetY, startX: player.x, startY: player.y };
+      enterBuildingAnim = { building: b, timer: 0, targetX, targetY, startX: player.x, startY: player.y, fadeAlpha: 0 };
       return;
     }
     if (dist < 48) {
@@ -2006,16 +2008,25 @@ function checkProximity() {
 // ---- UPDATE ----
 function update() {
   if (!gameStarted || dialogueActive) return;
-  // Walk-into-building animation
+  // Walk-into-building animation: walk 20 frames, stop, fade 40 frames, navigate
   if (enteringBuilding && enterBuildingAnim) {
     enterBuildingAnim.timer++;
-    const t = enterBuildingAnim.timer / enterBuildingAnim.maxTimer;
-    player.x = enterBuildingAnim.startX + (enterBuildingAnim.targetX - enterBuildingAnim.startX) * t;
-    player.y = enterBuildingAnim.startY + (enterBuildingAnim.targetY - enterBuildingAnim.startY) * t;
-    player.moving = true;
-    player.animTimer++;
-    if (player.animTimer > 6) { player.animFrame++; player.animTimer = 0; }
-    if (enterBuildingAnim.timer >= enterBuildingAnim.maxTimer) {
+    const walkFrames = 20;
+    const fadeFrames = 40;
+    if (enterBuildingAnim.timer <= walkFrames) {
+      // Walk phase: move player toward door/building
+      const t = enterBuildingAnim.timer / walkFrames;
+      player.x = enterBuildingAnim.startX + (enterBuildingAnim.targetX - enterBuildingAnim.startX) * t;
+      player.y = enterBuildingAnim.startY + (enterBuildingAnim.targetY - enterBuildingAnim.startY) * t;
+      player.moving = true;
+      player.animTimer++;
+      if (player.animTimer > 6) { player.animFrame++; player.animTimer = 0; }
+    } else {
+      // Fade phase: player stopped, screen fades to black
+      player.moving = false;
+      enterBuildingAnim.fadeAlpha = (enterBuildingAnim.timer - walkFrames) / fadeFrames;
+    }
+    if (enterBuildingAnim.timer >= walkFrames + fadeFrames) {
       window.location.href = enterBuildingAnim.building.url;
     }
     return;
@@ -2105,6 +2116,12 @@ function draw() {
   g.addColorStop(1,'rgba(0,0,0,0.3)');
   ctx.fillStyle = g;
   ctx.fillRect(0,0,W,H);
+
+  // Fade to black when entering a building
+  if (enterBuildingAnim && enterBuildingAnim.fadeAlpha > 0) {
+    ctx.fillStyle = `rgba(0,0,0,${Math.min(enterBuildingAnim.fadeAlpha, 1)})`;
+    ctx.fillRect(0, 0, W, H);
+  }
 }
 
 function gameLoop() {
