@@ -443,7 +443,7 @@ function getSpawnPos() {
     };
     if (spawns[lastBuilding]) return spawns[lastBuilding];
   }
-  return { x: 8 * TILE, y: 15 * TILE, dir: 0 };
+  return { x: 8 * TILE, y: 13.5 * TILE, dir: 0 };
 }
 const spawn = getSpawnPos();
 
@@ -808,96 +808,81 @@ function drawBuilding(b) {
   switch(b.special) {
 
     case 'tower': {
-      // HIGH FALLS: Scaffolding structure with a big ladder
-      const scaffH = h + 60; // tall scaffolding
-      const scaffTop = y - 60;
-
+      // HIGH FALLS: Simple building with a big ladder on the outside
       // Shadow
-      ctx.fillStyle = 'rgba(0,0,0,0.12)';
-      ctx.fillRect(x+4, scaffTop+4, w, scaffH);
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.fillRect(x+4, y+4, w, h);
 
-      // Ground/base platform
-      ctx.fillStyle = '#888';
-      ctx.fillRect(x-4, y+h-4, w+8, 6);
+      // Main building body (blue-grey concrete)
+      ctx.fillStyle = '#5a7090';
+      ctx.fillRect(x, y, w, h);
+      // Darker edge for depth
+      ctx.fillStyle = '#4a6080';
+      ctx.fillRect(x+w-6, y, 6, h);
+      // Lighter top
+      ctx.fillStyle = '#6a80a0';
+      ctx.fillRect(x+2, y+2, w-8, 6);
 
-      // Scaffolding vertical poles (metal grey)
-      ctx.fillStyle = '#889';
-      ctx.fillRect(x+2, scaffTop, 4, scaffH); // left pole
-      ctx.fillRect(x+w-6, scaffTop, 4, scaffH); // right pole
-      ctx.fillRect(x+w/2-2, scaffTop, 4, scaffH); // center pole
-      // Darker side for depth
-      ctx.fillStyle = '#667';
-      ctx.fillRect(x+4, scaffTop, 2, scaffH);
-      ctx.fillRect(x+w-4, scaffTop, 2, scaffH);
+      // Windows
+      ctx.fillStyle = '#c0d8f0';
+      ctx.fillRect(x+8, y+12, 12, 10);
+      ctx.fillRect(x+w-20, y+14, 12, 10);
+      ctx.fillRect(x+8, y+h-24, 12, 10);
+      // Window crosses
+      ctx.fillStyle = '#4a6080';
+      ctx.fillRect(x+13, y+12, 2, 10);
+      ctx.fillRect(x+8, y+16, 12, 2);
 
-      // Horizontal platforms every ~16px
-      for (let i=0;i<8;i++) {
-        const py = scaffTop + 8 + i*10;
-        // Platform planks (wood)
-        ctx.fillStyle = '#a08050';
-        ctx.fillRect(x, py, w, 4);
-        ctx.fillStyle = '#8a7040';
-        ctx.fillRect(x, py+3, w, 1);
-        // Cross bracing (X pattern between platforms)
-        if (i < 7) {
-          ctx.fillStyle = '#778';
-          // Left X brace
-          for (let j=0;j<8;j++) {
-            ctx.fillRect(x+2+j*2, py+4+j, 2, 1);
-            ctx.fillRect(x+w/2-4-j*2, py+4+j, 2, 1);
-          }
-          // Right X brace
-          for (let j=0;j<8;j++) {
-            ctx.fillRect(x+w/2+j*2, py+4+j, 2, 1);
-            ctx.fillRect(x+w-4-j*2, py+4+j, 2, 1);
-          }
-        }
-      }
+      // Roof edge
+      ctx.fillStyle = '#3a5070';
+      ctx.fillRect(x-2, y-4, w+4, 6);
 
-      // BIG LADDER on the right side
-      const lx = x+w-14;
+      // Safety net at base
+      ctx.fillStyle = '#4466cc';
+      ctx.fillRect(x+6, y+h-8, w-12, 6);
+      ctx.fillStyle = '#5577dd';
+      ctx.fillRect(x+8, y+h-6, w-16, 3);
+
+      // BIG LADDER on the OUTSIDE left side
+      const ladderH = h + 40;
+      const ladderTop = y - 40;
+      const lx = x - 16;
       // Ladder rails
       ctx.fillStyle = '#bb8830';
-      ctx.fillRect(lx, scaffTop-4, 3, scaffH+8);
-      ctx.fillRect(lx+10, scaffTop-4, 3, scaffH+8);
+      ctx.fillRect(lx, ladderTop, 3, ladderH);
+      ctx.fillRect(lx+12, ladderTop, 3, ladderH);
       // Ladder rungs
       ctx.fillStyle = '#cc9940';
-      for (let i=0;i<14;i++) {
-        ctx.fillRect(lx+2, scaffTop+i*6, 9, 2);
+      for (let i = 0; i < Math.floor(ladderH/6); i++) {
+        ctx.fillRect(lx+2, ladderTop + i*6, 11, 2);
       }
+      // Ladder shadow on building wall
+      ctx.fillStyle = 'rgba(0,0,0,0.1)';
+      ctx.fillRect(x, ladderTop, 4, ladderH);
 
-      // Safety net at bottom
-      ctx.fillStyle = '#4466cc';
-      ctx.fillRect(x+4, y+h-16, w-8, 10);
-      ctx.fillStyle = '#5577dd';
-      ctx.fillRect(x+6, y+h-14, w-12, 6);
-      // Net pattern
-      ctx.fillStyle = '#4466cc';
-      for (let i=0;i<5;i++) ctx.fillRect(x+8+i*8, y+h-14, 1, 6);
-
-      // Height markers
-      ctx.fillStyle = '#ffcc44';
+      // Height markers on building wall
+      ctx.fillStyle = '#7ec8e3';
       ctx.font = '6px monospace';
-      ctx.textAlign = 'right';
-      for (let i=0;i<5;i++) {
-        const my = scaffTop + 10 + i*16;
-        ctx.fillRect(x-2, my, 6, 1);
-        ctx.fillText(`${80-i*20}'`, x-4, my+3);
+      ctx.textAlign = 'left';
+      for (let i = 0; i < 5; i++) {
+        const my = ladderTop + 8 + i * 18;
+        ctx.fillRect(x+1, my, 8, 1);
+        ctx.fillText(`${100-i*20}'`, x+2, my-1);
       }
 
       // Warning tape at base
       ctx.fillStyle = '#ffcc00';
-      ctx.fillRect(x-6, y+h, w+12, 3);
+      ctx.fillRect(x-18, y+h, w+22, 3);
       ctx.fillStyle = '#222';
-      for (let i=0;i<8;i++) ctx.fillRect(x-6+i*7, y+h, 3, 3);
+      for (let i = 0; i < 10; i++) ctx.fillRect(x-18+i*7, y+h, 3, 3);
 
-      // Open doorway (gap in scaffolding base)
+      // Open doorway
       const dy1 = doorAtTop ? y-4 : y+h-12;
       ctx.fillStyle = '#0a0a1a';
       ctx.fillRect(x+w/2-8, dy1, 16, 14);
       ctx.fillStyle = '#1a1a2a';
       ctx.fillRect(x+w/2-6, dy1+2, 12, 10);
-      ctx.fillStyle = '#889';
+      ctx.fillStyle = '#5a7090';
       ctx.fillRect(x+w/2-9, dy1, 2, 14);
       ctx.fillRect(x+w/2+7, dy1, 2, 14);
       ctx.fillRect(x+w/2-9, dy1, 18, 2);
