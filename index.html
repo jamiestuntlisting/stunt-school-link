@@ -1294,8 +1294,8 @@ function drawBuilding(b) {
     }
   }
 
-  // Sign (below for top-facing buildings, above for bottom-facing)
-  const signY = doorAtTop ? y+h+16 : y-32;
+  // Sign always at the top of the building
+  const signY = y - 32;
   const signW = Math.max(w+20, 70);
   const signX = x+w/2-signW/2;
   ctx.fillStyle = 'rgba(0,0,0,0.85)';
