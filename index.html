@@ -444,25 +444,29 @@ for (let x = 1; x < MAP_W-1; x++) { setTile(x, 10, 1); setTile(x, 11, 1); }
 for (let x = 1; x < 5; x++) { setTile(x, 4, 1); setTile(x, 16, 1); }
 for (let x = 7; x < 10; x++) { setTile(x, 4, 1); setTile(x, 16, 1); }
 
-// Water pond (center-ish decoration)
+// EXIT on the right side - open the wall
+map[10][MAP_W-1] = 1;
+map[11][MAP_W-1] = 1;
+
+// Water pond
 setTile(2, 8, 3); setTile(3, 8, 3); setTile(2, 9, 3); setTile(3, 9, 3);
 
-// Flowers scattered around center
+// Flowers
 setTile(8, 8, 4); setTile(9, 9, 4); setTile(1, 12, 4); setTile(2, 13, 4);
 setTile(8, 12, 4); setTile(9, 13, 4); setTile(1, 7, 4);
 
 // Dark grass
 setTile(8, 6, 5); setTile(9, 7, 5); setTile(1, 14, 5); setTile(2, 14, 5);
 
-// ---- BUILDINGS in corners (doors face center) ----
+// ---- BUILDINGS in corners (SWAPPED: Stair Falls top-left, High Falls bottom-left) ----
 const buildings = [
   {
-    name: 'HIGH FALLS',
+    name: 'STAIR FALLS',
     x: 1, y: 1, w: 4, h: 3,
     doorX: 3, doorY: 4, doorSide: 'bottom',
-    url: 'https://pro-high-faller.vercel.app/',
-    color: '#4a6fa5', roofColor: '#2c4a7c', accent: '#7ec8e3',
-    special: 'tower'
+    url: 'https://pro-stair-faller.vercel.app/',
+    color: '#6b5b45', roofColor: '#4a3f30', accent: '#c4a76c',
+    special: 'stairs'
   },
   {
     name: 'FIRE BURNS',
@@ -473,12 +477,12 @@ const buildings = [
     special: 'fire'
   },
   {
-    name: 'STAIR FALLS',
+    name: 'HIGH FALLS',
     x: 1, y: 15, w: 4, h: 4,
     doorX: 3, doorY: 15, doorSide: 'top',
-    url: 'https://pro-stair-faller.vercel.app/',
-    color: '#6b5b45', roofColor: '#4a3f30', accent: '#c4a76c',
-    special: 'stairs'
+    url: 'https://pro-high-faller.vercel.app/',
+    color: '#4a6fa5', roofColor: '#2c4a7c', accent: '#7ec8e3',
+    special: 'tower'
   },
   {
     name: 'STUNT COORD',
@@ -489,6 +493,9 @@ const buildings = [
     special: 'office'
   }
 ];
+
+// Exit zone check - when player walks off right edge
+const EXIT_URL = null; // set to a URL if you want the exit to go somewhere
 
 // ---- NPCs ----
 // Each NPC has 3 rounds of dialogue that cycle
@@ -828,75 +835,115 @@ function drawBuilding(b) {
     }
 
     case 'fire': {
-      // FIRE BURNS: The building is ON FIRE
+      // FIRE BURNS: ENGULFED in fire - barely visible building under massive flames
+      // Heat glow on ground around building
+      ctx.fillStyle = 'rgba(255,60,0,0.08)';
+      ctx.fillRect(x-16, y-10, w+32, h+24);
       // Shadow
       ctx.fillStyle = 'rgba(0,0,0,0.2)';
       ctx.fillRect(x+3, y+3, w, h);
-      // Charred/dark building body
-      ctx.fillStyle = '#3a1a0a';
+      // Charred building body (barely visible under flames)
+      ctx.fillStyle = '#2a0a00';
       ctx.fillRect(x, y, w, h);
       // Scorched brick pattern
-      ctx.fillStyle = '#4a2010';
+      ctx.fillStyle = '#3a1508';
       for (let by=0;by<h;by+=6) for (let bx=0;bx<w;bx+=8) {
         ctx.fillRect(x+bx+((by/6)%2)*4, y+by, 7, 5);
       }
-      // Broken/melted windows
-      ctx.fillStyle = '#ff6600';
-      ctx.fillRect(x+6, y+10, 8, 8);
-      ctx.fillRect(x+w-14, y+12, 8, 8);
+      // Glowing windows (fire inside)
+      ctx.fillStyle = '#ff4400';
+      ctx.fillRect(x+4, y+8, 10, 10);
+      ctx.fillRect(x+w-14, y+10, 10, 10);
       ctx.fillStyle = '#ffaa00';
+      ctx.fillRect(x+6, y+10, 6, 6);
+      ctx.fillRect(x+w-12, y+12, 6, 6);
+      ctx.fillStyle = '#ffee88';
       ctx.fillRect(x+7, y+11, 4, 4);
-      ctx.fillRect(x+w-13, y+13, 4, 4);
-      // MASSIVE ANIMATED FLAMES covering the roof
-      for (let i=0;i<6;i++) {
-        const fx = x + 4 + i*(w/6);
-        const fh = 12 + Math.sin(frame*0.12+i*1.5)*6;
-        const fh2 = 8 + Math.sin(frame*0.18+i*2.1)*4;
-        const fh3 = 5 + Math.sin(frame*0.22+i*0.8)*3;
-        // Outer flame (red)
+      ctx.fillRect(x+w-11, y+13, 4, 4);
+
+      // MASSIVE FLAMES - roof, sides, everywhere
+      // Roof inferno (10 flame columns)
+      for (let i=0;i<10;i++) {
+        const fx = x - 4 + i*(w+8)/10;
+        const phase = i*1.3+frame*0.14;
+        const fh = 18 + Math.sin(phase)*10 + Math.sin(phase*1.7)*5;
+        const fh2 = 14 + Math.sin(phase*1.3+1)*7;
+        const fh3 = 8 + Math.sin(phase*1.8+2)*5;
+        ctx.fillStyle = '#aa1100';
+        ctx.fillRect(fx-1, y-fh-4, 12, fh+8);
         ctx.fillStyle = '#dd2200';
-        ctx.fillRect(fx, y-fh, 10, fh+4);
-        // Mid flame (orange)
+        ctx.fillRect(fx+1, y-fh, 8, fh+4);
         ctx.fillStyle = '#ff6600';
-        ctx.fillRect(fx+2, y-fh2-4, 6, fh2+4);
-        // Inner flame (yellow)
-        ctx.fillStyle = '#ffcc00';
-        ctx.fillRect(fx+3, y-fh3-2, 4, fh3);
-        // White hot tips
-        ctx.fillStyle = '#fff4cc';
+        ctx.fillRect(fx+2, y-fh2-2, 6, fh2+4);
+        ctx.fillStyle = '#ffaa00';
+        ctx.fillRect(fx+3, y-fh3, 4, fh3+2);
+        ctx.fillStyle = '#ffdd44';
+        ctx.fillRect(fx+3, y-fh3-2, 3, 4);
+        ctx.fillStyle = '#fff8cc';
         ctx.fillRect(fx+4, y-fh3-4, 2, 3);
       }
-      // Side flames licking out of windows
-      const sf = Math.sin(frame*0.2)*4;
-      ctx.fillStyle = '#ff4400';
-      ctx.fillRect(x-4-sf, y+10, 6+sf, 8);
-      ctx.fillRect(x+w+sf, y+12, 6-sf, 6);
-      // Smoke rising
-      ctx.fillStyle = 'rgba(60,60,60,0.25)';
-      for (let i=0;i<3;i++) {
-        const sy = y-20-i*14-Math.sin(frame*0.03+i)*6;
-        const sx = x+w/2-8+Math.sin(frame*0.04+i*2)*8;
+      // LEFT SIDE wall of flames
+      for (let i=0;i<4;i++) {
+        const fy = y + 4 + i*(h/4);
+        const fw = 8 + Math.sin(frame*0.16+i*2)*5;
+        ctx.fillStyle = '#dd2200';
+        ctx.fillRect(x-fw, fy, fw+4, 14);
+        ctx.fillStyle = '#ff6600';
+        ctx.fillRect(x-fw+2, fy+2, fw-2, 10);
+        ctx.fillStyle = '#ffaa00';
+        ctx.fillRect(x-fw+4, fy+4, fw-6, 6);
+      }
+      // RIGHT SIDE wall of flames
+      for (let i=0;i<4;i++) {
+        const fy = y + 2 + i*(h/4);
+        const fw = 8 + Math.sin(frame*0.18+i*1.7+1)*5;
+        ctx.fillStyle = '#dd2200';
+        ctx.fillRect(x+w-4, fy, fw+4, 14);
+        ctx.fillStyle = '#ff6600';
+        ctx.fillRect(x+w-2, fy+2, fw-2, 10);
+        ctx.fillStyle = '#ffaa00';
+        ctx.fillRect(x+w, fy+4, fw-6, 6);
+      }
+      // Fire on the ground in front
+      for (let i=0;i<5;i++) {
+        const gx = x - 8 + i*(w+16)/5;
+        const gh = 6 + Math.sin(frame*0.2+i*1.5)*3;
+        ctx.fillStyle = '#cc2200';
+        ctx.fillRect(gx, y+h, 10, gh);
+        ctx.fillStyle = '#ff6600';
+        ctx.fillRect(gx+2, y+h, 6, gh-2);
+      }
+      // Thick smoke columns
+      ctx.fillStyle = 'rgba(40,40,40,0.3)';
+      for (let i=0;i<5;i++) {
+        const sy = y-30-i*12-Math.sin(frame*0.025+i)*8;
+        const sx = x+w/2-10+Math.sin(frame*0.035+i*2.5)*12;
         ctx.beginPath();
-        ctx.arc(sx+8, sy, 8+i*3, 0, Math.PI*2);
+        ctx.arc(sx+8, sy, 10+i*4, 0, Math.PI*2);
         ctx.fill();
       }
-      // Ember particles
+      // Lots of ember particles flying up
       ctx.fillStyle = '#ff8800';
-      for (let i=0;i<5;i++) {
-        const ex = x+Math.sin(frame*0.07+i*3)*w/2+w/2;
-        const ey = y-10-((frame*0.8+i*20)%50);
+      for (let i=0;i<12;i++) {
+        const ex = x-10+Math.sin(frame*0.06+i*2.7)*(w/2+20)+w/2+10;
+        const ey = y-8-((frame*0.9+i*15)%70);
         ctx.fillRect(ex, ey, 2, 2);
       }
-      // Scorch marks on ground around building
-      ctx.fillStyle = 'rgba(30,15,0,0.3)';
-      ctx.fillRect(x-6, y+h, w+12, 6);
-      // Door (fireproof, metal)
+      ctx.fillStyle = '#ffcc44';
+      for (let i=0;i<8;i++) {
+        const ex = x+Math.sin(frame*0.08+i*3.1)*w/2+w/2;
+        const ey = y-5-((frame*1.2+i*12)%55);
+        ctx.fillRect(ex, ey, 1, 1);
+      }
+      // Scorch marks on ground
+      ctx.fillStyle = 'rgba(30,10,0,0.35)';
+      ctx.fillRect(x-10, y+h+6, w+20, 8);
+      // Metal door (fireproof)
       const dy2 = doorAtTop ? y-4 : y+h-12;
-      ctx.fillStyle = '#666';
+      ctx.fillStyle = '#555';
       ctx.fillRect(x+w/2-7, dy2, 14, 14);
-      ctx.fillStyle = '#888';
+      ctx.fillStyle = '#777';
       ctx.fillRect(x+w/2-5, dy2+2, 10, 10);
-      // Warning sign
       ctx.fillStyle = '#ffcc00';
       ctx.fillRect(x+w/2-3, dy2+3, 6, 6);
       ctx.fillStyle = '#ff0000';
@@ -905,60 +952,97 @@ function drawBuilding(b) {
     }
 
     case 'stairs': {
-      // STAIR FALLS: Stairs EVERYWHERE - jutting out in all directions
+      // STAIR FALLS: An INSANE amount of stairs in every direction
       // Shadow
       ctx.fillStyle = 'rgba(0,0,0,0.15)';
       ctx.fillRect(x+4, y+4, w, h);
       // Main building body
-      ctx.fillStyle = b.color;
+      ctx.fillStyle = '#6b5b45';
       ctx.fillRect(x, y, w, h);
-      // Brick pattern
+      // Stone/brick texture
       ctx.fillStyle = '#5a4a38';
-      for (let by=0;by<h;by+=8) for (let bx=0;bx<w;bx+=10) {
-        ctx.fillRect(x+bx+((by/8)%2)*5, y+by, 9, 7);
+      for (let by=0;by<h;by+=7) for (let bx=0;bx<w;bx+=9) {
+        ctx.fillRect(x+bx+((by/7)%2)*4, y+by, 8, 6);
       }
-      // STAIRS going up the left side
-      ctx.fillStyle = '#c4a76c';
-      for (let i=0;i<7;i++) {
-        const sw = 14+i*2;
-        ctx.fillRect(x-sw+12, y+h-8-i*10, sw, 4);
-        ctx.fillStyle = '#a89060';
-        ctx.fillRect(x-sw+12, y+h-6-i*10, sw, 2);
+
+      // LEFT side: Grand staircase going up (10 steps)
+      for (let i=0;i<10;i++) {
+        const sw = 10+i*2;
+        const sy = y+h-4-i*7;
         ctx.fillStyle = '#c4a76c';
+        ctx.fillRect(x-sw+8, sy, sw+2, 4);
+        ctx.fillStyle = '#b89a5a';
+        ctx.fillRect(x-sw+8, sy+3, sw+2, 2);
+        // Railing posts on left stairs
+        if (i%2===0) {
+          ctx.fillStyle = '#8a7a60';
+          ctx.fillRect(x-sw+7, sy-6, 3, 10);
+        }
       }
-      // STAIRS going up the right side
+      // RIGHT side: Zigzag fire-escape stairs
+      for (let i=0;i<8;i++) {
+        const sw = 8+i*2;
+        const sy = y+h-2-i*8;
+        const dir = i%2===0 ? 1 : -1;
+        ctx.fillStyle = '#d4b878';
+        ctx.fillRect(x+w-4+(dir>0?0:-sw+8), sy, sw, 4);
+        ctx.fillStyle = '#bfa668';
+        ctx.fillRect(x+w-4+(dir>0?0:-sw+8), sy+3, sw, 2);
+        // Vertical connector between zigzag
+        if (i>0) {
+          ctx.fillStyle = '#a09060';
+          ctx.fillRect(x+w+(i%2===0?-4:sw-12), sy, 3, 8);
+        }
+      }
+      // ROOF: Stairs going up to a crazy height (M.C. Escher style)
+      for (let i=0;i<8;i++) {
+        const rw = Math.max(4, w-8-i*8);
+        const ry = y-4-i*6;
+        ctx.fillStyle = '#c4a76c';
+        ctx.fillRect(x+4+i*4, ry, rw, 4);
+        ctx.fillStyle = '#a89060';
+        ctx.fillRect(x+4+i*4, ry+3, rw, 2);
+      }
+      // Stairs going DOWN on the other side of the roof
       for (let i=0;i<5;i++) {
-        const sw = 12+i*2;
-        ctx.fillRect(x+w-12, y+h-6-i*12, sw, 4);
-        ctx.fillStyle = '#a89060';
-        ctx.fillRect(x+w-12, y+h-4-i*12, sw, 2);
-        ctx.fillStyle = '#c4a76c';
-      }
-      // Stairs on the roof going UP further
-      ctx.fillStyle = '#b8985a';
-      for (let i=0;i<4;i++) {
-        ctx.fillRect(x+8+i*6, y-4-i*6, w-16-i*12, 5);
-        ctx.fillStyle = '#a08848';
-        ctx.fillRect(x+8+i*6, y-2-i*6, w-16-i*12, 2);
         ctx.fillStyle = '#b8985a';
+        ctx.fillRect(x+w-8-i*3, y-2-i*5, 12+i*3, 3);
+        ctx.fillStyle = '#a08848';
+        ctx.fillRect(x+w-8-i*3, y-i*5, 12+i*3, 2);
       }
-      // Railing posts
+      // FRONT FACE: Tiny stairs going across the facade
+      for (let i=0;i<4;i++) {
+        ctx.fillStyle = '#c4a76c';
+        ctx.fillRect(x+6+i*12, y+10+i*6, 10, 3);
+        ctx.fillRect(x+2+i*10, y+20-i*4, 8, 3);
+      }
+      // Broken/fallen stair pieces on the ground
+      ctx.fillStyle = '#b89a5a';
+      ctx.fillRect(x-12, y+h+4, 14, 3);
+      ctx.fillRect(x+w+2, y+h+2, 10, 3);
+      ctx.fillRect(x+8, y+h+6, 8, 3);
+      ctx.fillRect(x+w-16, y+h+8, 12, 3);
+      // Railing posts (tall ones on both sides)
       ctx.fillStyle = '#8a7a60';
-      ctx.fillRect(x-8, y+2, 3, h+4);
-      ctx.fillRect(x+w+6, y+10, 3, h-6);
-      // Railing horizontal bars
+      ctx.fillRect(x-14, y-30, 3, h+38);
+      ctx.fillRect(x+w+10, y-10, 3, h+18);
+      // Railing cross bars
       ctx.fillStyle = '#7a6a50';
-      for (let i=0;i<3;i++) {
-        ctx.fillRect(x-8, y+4+i*20, 10, 2);
-        ctx.fillRect(x+w+2, y+14+i*16, 10, 2);
+      for (let i=0;i<5;i++) {
+        ctx.fillRect(x-14, y-28+i*16, 14, 2);
       }
-      // Random stair pieces jutting out of walls
-      ctx.fillStyle = '#c4a76c';
-      ctx.fillRect(x+4, y-8, 20, 4);
-      ctx.fillRect(x+w-20, y+h+2, 16, 4);
-      // Crash pad at bottom
+      for (let i=0;i<4;i++) {
+        ctx.fillRect(x+w+4, y-8+i*14, 12, 2);
+      }
+      // Crash pads at the base
       ctx.fillStyle = '#4466aa';
-      ctx.fillRect(x+6, y+h+6, w-12, 6);
+      ctx.fillRect(x-8, y+h+10, 16, 5);
+      ctx.fillRect(x+w-4, y+h+10, 16, 5);
+      // "CAUTION: STAIRS" tape
+      ctx.fillStyle = '#ffcc00';
+      ctx.fillRect(x-2, y+h-2, w+4, 3);
+      ctx.fillStyle = '#222';
+      for (let i=0;i<6;i++) ctx.fillRect(x+i*8, y+h-2, 4, 3);
       // Door
       const dy3 = doorAtTop ? y-4 : y+h-12;
       ctx.fillStyle = '#4a3520';
@@ -1343,16 +1427,17 @@ function drawNPC(npc) {
 const decorations = [
   { type: 'dummy', x: 5*TILE+4, y: 7*TILE },
   { type: 'dummy', x: 6*TILE+4, y: 7*TILE+16 },
-  { type: 'barrel', x: 9*TILE, y: 10*TILE },
-  { type: 'barrel', x: 9*TILE+16, y: 10*TILE },
+  { type: 'barrel', x: 9*TILE, y: 8*TILE },
+  { type: 'barrel', x: 9*TILE+16, y: 8*TILE },
   { type: 'cone', x: 1*TILE+8, y: 11*TILE+8 },
-  { type: 'cone', x: 9*TILE+8, y: 11*TILE+8 },
+  { type: 'cone', x: 9*TILE+8, y: 13*TILE+8 },
   { type: 'sign', x: 5*TILE+4, y: 5*TILE+8 },
   { type: 'mat', x: 4*TILE, y: 9*TILE },
   { type: 'lamp', x: 5*TILE, y: 5*TILE },
   { type: 'lamp', x: 6*TILE, y: 5*TILE },
   { type: 'lamp', x: 5*TILE, y: 14*TILE },
   { type: 'lamp', x: 6*TILE, y: 14*TILE },
+  { type: 'exit', x: (MAP_W-1)*TILE-4, y: 10*TILE },
 ];
 
 function drawDecoration(d) {
@@ -1418,6 +1503,25 @@ function drawDecoration(d) {
       ctx.arc(d.x+8,d.y+5,14+Math.sin(frame*0.05)*2,0,Math.PI*2);
       ctx.fill();
       break;
+    case 'exit':
+      // EXIT sign with arrow pointing right
+      ctx.fillStyle = '#cc2222';
+      ctx.fillRect(d.x-8, d.y, 28, 18);
+      ctx.fillStyle = '#ee4444';
+      ctx.fillRect(d.x-6, d.y+2, 24, 14);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 8px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('EXIT', d.x+6, d.y+11);
+      // Arrow
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(d.x+16, d.y+7, 8, 3);
+      ctx.fillRect(d.x+20, d.y+4, 3, 10);
+      // Glow
+      const ep = Math.sin(frame*0.08)*0.04+0.1;
+      ctx.fillStyle = `rgba(255,50,50,${ep})`;
+      ctx.fillRect(d.x-12, d.y-4, 36, 26);
+      break;
   }
 }
 
@@ -1466,12 +1570,14 @@ function update() {
   if (keys['ArrowUp']||keys['w']||keys['W']) { dy=-player.speed; player.dir=3; }
   if (keys['ArrowDown']||keys['s']||keys['S']) { dy=player.speed; player.dir=0; }
 
-  // Touch joystick (omnidirectional, analog)
+  // Touch joystick (omnidirectional, constant speed)
   if (joystick.active) {
     const deadzone = 0.15;
-    if (Math.abs(joystick.x) > deadzone || Math.abs(joystick.y) > deadzone) {
-      dx += joystick.x * player.speed;
-      dy += joystick.y * player.speed;
+    const jmag = Math.sqrt(joystick.x*joystick.x + joystick.y*joystick.y);
+    if (jmag > deadzone) {
+      // Normalize to constant speed regardless of joystick distance
+      dx += (joystick.x / jmag) * player.speed;
+      dy += (joystick.y / jmag) * player.speed;
       // Set facing direction based on dominant axis
       if (Math.abs(joystick.x) > Math.abs(joystick.y)) {
         player.dir = joystick.x < 0 ? 1 : 2;
