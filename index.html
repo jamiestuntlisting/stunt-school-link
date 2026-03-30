@@ -797,6 +797,22 @@ function drawTile(tx, ty) {
   }
 }
 
+function drawDoorLight(doorX, doorY, facesUp, color) {
+  // Light cone spilling out of the doorway
+  const cx = doorX * TILE;
+  const cy = doorY * TILE;
+  const dir = facesUp ? -1 : 1;
+  const r = color || [255, 220, 140];
+  // Layered glow getting wider and fainter
+  for (let i = 0; i < 5; i++) {
+    const spread = 6 + i * 6;
+    const dist = 4 + i * 8;
+    const alpha = 0.12 - i * 0.02;
+    ctx.fillStyle = `rgba(${r[0]},${r[1]},${r[2]},${alpha})`;
+    ctx.fillRect(cx - spread, cy + dir * dist, spread * 2, 8);
+  }
+}
+
 function drawBuilding(b) {
   const x = b.x*TILE, y = b.y*TILE, w = b.w*TILE, h = b.h*TILE;
   const doorAtTop = b.doorSide === 'top';
@@ -1295,6 +1311,10 @@ function drawBuilding(b) {
   ctx.font = 'bold 11px monospace';
   ctx.textAlign = 'center';
   ctx.fillText(b.name, x+w/2, signY+14);
+
+  // Light spilling out of the doorway
+  const lightColor = b.special === 'fire' ? [255, 140, 40] : [255, 220, 140];
+  drawDoorLight(b.doorX, b.doorY, b.doorSide === 'top', lightColor);
 }
 
 function drawPlayer() {
