@@ -390,7 +390,21 @@ function setupTouch() {
   document.getElementById('touch-action-btn').addEventListener('touchstart', e => {
     e.preventDefault(); handleAction();
   }, {passive:false});
+
+  // Tap anywhere on screen to advance dialogue
+  document.addEventListener('touchstart', e => {
+    if (dialogueActive) {
+      handleAction();
+    }
+  }, {passive:true});
 }
+
+// Click anywhere to advance dialogue (works for desktop too)
+document.addEventListener('click', e => {
+  if (dialogueActive) {
+    handleAction();
+  }
+});
 
 function startGame() {
   if (gameStarted) return;
@@ -424,6 +438,7 @@ document.addEventListener('keydown', function firstKey() {
 
 // ---- PLAYER ----
 let enteringBuilding = false;
+let enterBuildingAnim = null; // {building, timer, maxTimer, targetX, targetY}
 let returnAnim = null; // {type, timer} for return animations
 let hasSunglasses = false;
 
@@ -435,12 +450,12 @@ function getSpawnPos() {
     const spawns = {
       'stairfalls': { x: 4 * TILE, y: 8 * TILE, dir: 0 },
       'fireburns':  { x: 12 * TILE, y: 8 * TILE, dir: 0 },
-      'highfalls':  { x: 4 * TILE, y: 21 * TILE, dir: 3 },
-      'stuntcoord': { x: 12 * TILE, y: 21 * TILE, dir: 3 }
+      'highfalls':  { x: 4 * TILE, y: 19 * TILE, dir: 3 },
+      'stuntcoord': { x: 12 * TILE, y: 19 * TILE, dir: 3 }
     };
     // Set return animation based on which building
-    if (lastBuilding === 'stairfalls') returnAnim = { type: 'tumble', timer: 90 };
-    else if (lastBuilding === 'fireburns') returnAnim = { type: 'onfire', timer: 120 };
+    if (lastBuilding === 'stairfalls') returnAnim = { type: 'stairfall', timer: 120 };
+    else if (lastBuilding === 'fireburns') returnAnim = { type: 'onfire', timer: 300 }; // ~5 seconds
     else if (lastBuilding === 'highfalls') returnAnim = { type: 'hardfall', timer: 80 };
     else if (lastBuilding === 'stuntcoord') { returnAnim = { type: 'cool', timer: 60 }; hasSunglasses = true; }
     if (spawns[lastBuilding]) return spawns[lastBuilding];
@@ -1435,37 +1450,101 @@ function drawPlayer() {
     returnAnim.timer--;
     const t = returnAnim.timer;
 
-    if (returnAnim.type === 'tumble') {
-      // Rolling down stairs - spin and stars
-      ctx.save();
-      ctx.translate(x+10, y+12);
-      ctx.rotate(t * 0.15);
-      ctx.fillStyle = '#ffdb58';
-      for (let i=0;i<3;i++) {
-        const sx = Math.sin(t*0.2+i*2.1)*16;
-        const sy = Math.cos(t*0.2+i*2.1)*12;
-        ctx.fillRect(sx-1, sy-1, 3, 3);
-      }
-      ctx.restore();
-    } else if (returnAnim.type === 'onfire') {
-      // On fire! Flames around the player
-      for (let i=0;i<6;i++) {
-        const fx = x-4+Math.sin(frame*0.3+i*1.1)*14+4;
-        const fy = y-2+Math.sin(frame*0.4+i*1.7)*6;
-        const fh = 6+Math.sin(frame*0.2+i)*4;
-        ctx.fillStyle = t > 60 ? '#ff4400' : (t > 30 ? '#ff8800' : '#ffcc44');
-        ctx.fillRect(fx, fy-fh, 4, fh);
-        ctx.fillStyle = '#ffcc00';
-        ctx.fillRect(fx+1, fy-fh+2, 2, fh-3);
-      }
-      // Smoke when dying down
-      if (t < 40) {
-        ctx.fillStyle = `rgba(80,80,80,${t/80})`;
-        for (let i=0;i<3;i++) {
+    if (returnAnim.type === 'stairfall') {
+      // Stair fall - player tumbles down steps, bouncing and rolling
+      if (t > 60) {
+        // Actively falling down stairs - player bounces in a staircase pattern
+        const fallProgress = (120 - t) / 60; // 0 to 1
+        const stepNum = Math.floor(fallProgress * 5);
+        const stepFrac = (fallProgress * 5) % 1;
+        // Move player down and to the side in stair steps
+        const bounceY = Math.abs(Math.sin(stepFrac * Math.PI)) * 8;
+        player.y = player.y + 0.5; // gradually move down
+        // Rotation effect
+        ctx.save();
+        ctx.translate(x+10, y+12);
+        ctx.rotate(t * 0.25);
+        // Draw motion blur lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 3; i++) {
+          const lx = Math.sin(i * 2.1) * 12;
+          const ly = Math.cos(i * 2.1) * 8;
           ctx.beginPath();
-          ctx.arc(x+10+Math.sin(frame*0.05+i)*8, y-8-i*8, 4+i*2, 0, Math.PI*2);
+          ctx.moveTo(lx, ly);
+          ctx.lineTo(lx + 6, ly + 4);
+          ctx.stroke();
+        }
+        ctx.restore();
+        // Impact dust on each "step"
+        if (t % 12 < 3) {
+          ctx.fillStyle = 'rgba(200,180,140,0.6)';
+          ctx.beginPath();
+          ctx.arc(x + 10 + Math.random()*8-4, y + 24, 3 + Math.random()*3, 0, Math.PI*2);
           ctx.fill();
         }
+      } else if (t > 30) {
+        // Landing hard at the bottom - impact
+        const shake = Math.sin(t * 3) * 2;
+        ctx.fillStyle = 'rgba(200,180,140,0.4)';
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          ctx.arc(x + 10 + Math.sin(t*0.5+i*1.5)*12, y + 22 + shake, 2+i, 0, Math.PI*2);
+          ctx.fill();
+        }
+        // Ouch stars
+        ctx.fillStyle = '#ffdb58';
+        ctx.fillRect(x - 6 + shake, y - 2, 3, 3);
+        ctx.fillRect(x + 20 - shake, y - 4, 3, 3);
+      } else {
+        // Getting up slowly, dusting off
+        ctx.fillStyle = 'rgba(200,180,140,0.3)';
+        for (let i = 0; i < 2; i++) {
+          ctx.beginPath();
+          ctx.arc(x + 5 + i*10, y + 20 + Math.sin(t*0.2)*2, 2, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+    } else if (returnAnim.type === 'onfire') {
+      // On fire! Full 5-second fire burn
+      const intensity = t > 200 ? 1.0 : (t > 100 ? 0.7 : (t > 60 ? 0.4 : 0.2));
+      const numFlames = Math.ceil(8 * intensity);
+      for (let i = 0; i < numFlames; i++) {
+        const fx = x - 6 + Math.sin(frame*0.3 + i*0.8) * 16 + 6;
+        const fy = y - 2 + Math.sin(frame*0.4 + i*1.7) * 6;
+        const fh = (6 + Math.sin(frame*0.2+i)*4) * intensity;
+        // Color shifts from red-hot to cooling
+        if (t > 200) ctx.fillStyle = '#ff2200';
+        else if (t > 150) ctx.fillStyle = '#ff4400';
+        else if (t > 100) ctx.fillStyle = '#ff6600';
+        else if (t > 60) ctx.fillStyle = '#ff8800';
+        else ctx.fillStyle = '#ffaa44';
+        ctx.fillRect(fx, fy - fh, 4, fh);
+        ctx.fillStyle = '#ffcc00';
+        ctx.fillRect(fx+1, fy - fh + 2, 2, fh - 3);
+      }
+      // Embers floating up
+      if (t > 100) {
+        ctx.fillStyle = '#ff6600';
+        for (let i = 0; i < 3; i++) {
+          const ex = x + 10 + Math.sin(frame*0.1+i*2)*14;
+          const ey = y - 10 - ((300-t+i*20) % 40);
+          ctx.fillRect(ex, ey, 2, 2);
+        }
+      }
+      // Smoke when dying down
+      if (t < 80) {
+        ctx.fillStyle = `rgba(80,80,80,${Math.min(t/80, 0.6)})`;
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          ctx.arc(x + 10 + Math.sin(frame*0.05+i)*10, y - 8 - i*8 - (80-t)*0.3, 3+i*2, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+      // Player flashing red when on fire
+      if (t > 60 && frame % 4 < 2) {
+        ctx.fillStyle = 'rgba(255,50,0,0.3)';
+        ctx.fillRect(x, y, 20, 24);
       }
     } else if (returnAnim.type === 'hardfall') {
       // Hard fall - screen shake and impact stars
@@ -1872,16 +1951,18 @@ function checkProximity() {
   for (const b of buildings) {
     const bx = b.doorX*TILE, by = b.doorY*TILE;
     const dist = Math.hypot(player.x+10-bx, player.y+12-by);
-    if (dist < 30 && !enteringBuilding) {
-      // Freeze controls and navigate
+    if (dist < 18 && !enteringBuilding) {
+      // Start walk-into-building animation
       enteringBuilding = true;
-      // Save which building for return spawn
       const tagMap = {'STAIR FALLS':'stairfalls','FIRE BURNS':'fireburns','HIGH FALLS':'highfalls','STUNT COORD':'stuntcoord'};
       localStorage.setItem('stuntschool_lastbuilding', tagMap[b.name] || '');
-      // Small delay so player visually disappears into the door
-      setTimeout(() => {
-        window.location.href = b.url;
-      }, 300);
+      // Target: center of the building
+      const targetX = (b.x + b.w/2) * TILE - 10;
+      const targetY = (b.y + b.h/2) * TILE - 12;
+      // Set direction toward building center
+      if (b.doorSide === 'bottom') player.dir = 3; // face up
+      else player.dir = 0; // face down
+      enterBuildingAnim = { building: b, timer: 0, maxTimer: 50, targetX, targetY, startX: player.x, startY: player.y };
       return;
     }
     if (dist < 48) {
@@ -1924,8 +2005,27 @@ function checkProximity() {
 
 // ---- UPDATE ----
 function update() {
-  if (!gameStarted || dialogueActive || enteringBuilding) return;
-  if (returnAnim && returnAnim.timer > 40) return; // freeze during dramatic part of return anim
+  if (!gameStarted || dialogueActive) return;
+  // Walk-into-building animation
+  if (enteringBuilding && enterBuildingAnim) {
+    enterBuildingAnim.timer++;
+    const t = enterBuildingAnim.timer / enterBuildingAnim.maxTimer;
+    player.x = enterBuildingAnim.startX + (enterBuildingAnim.targetX - enterBuildingAnim.startX) * t;
+    player.y = enterBuildingAnim.startY + (enterBuildingAnim.targetY - enterBuildingAnim.startY) * t;
+    player.moving = true;
+    player.animTimer++;
+    if (player.animTimer > 6) { player.animFrame++; player.animTimer = 0; }
+    if (enterBuildingAnim.timer >= enterBuildingAnim.maxTimer) {
+      window.location.href = enterBuildingAnim.building.url;
+    }
+    return;
+  }
+  if (enteringBuilding) return;
+  // Freeze controls during dramatic part of return anim
+  if (returnAnim && returnAnim.timer > 0) {
+    const freezeThreshold = returnAnim.type === 'onfire' ? 60 : (returnAnim.type === 'stairfall' ? 30 : 40);
+    if (returnAnim.timer > freezeThreshold) return;
+  }
   player.moving = false;
   let dx = 0, dy = 0;
 
