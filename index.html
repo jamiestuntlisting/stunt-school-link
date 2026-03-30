@@ -102,46 +102,29 @@ canvas {
   color: #e8c170; font-family: monospace; font-size: 12px;
   padding: 4px 10px; border-radius: 4px; cursor: pointer;
 }
-/* Touch D-pad */
-#touch-controls {
+/* Joystick (right side) */
+#joystick-area {
   position: absolute;
-  bottom: 12px; left: 50%; transform: translateX(-50%);
-  width: 140px; height: 140px;
+  bottom: 16px; right: 16px;
+  width: 120px; height: 120px;
   z-index: 20;
   display: none;
-}
-.dpad-btn {
-  position: absolute;
-  width: 44px; height: 44px;
-  background: rgba(232,193,112,0.25);
-  border: 2px solid rgba(232,193,112,0.5);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  color: rgba(232,193,112,0.7);
-  font-size: 20px;
   -webkit-tap-highlight-color: transparent;
 }
-.dpad-btn:active, .dpad-btn.active { background: rgba(232,193,112,0.5); }
-.dpad-up { top: 0; left: 50%; transform: translateX(-50%); }
-.dpad-down { bottom: 0; left: 50%; transform: translateX(-50%); }
-.dpad-left { top: 50%; left: 0; transform: translateY(-50%); }
-.dpad-right { top: 50%; right: 0; transform: translateY(-50%); }
-.dpad-center {
-  top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: 38px; height: 38px; font-size: 10px;
-  background: rgba(126,200,227,0.25);
-  border-color: rgba(126,200,227,0.5);
-  color: rgba(126,200,227,0.8);
+#joystick-area canvas {
+  width: 120px; height: 120px;
+  border-radius: 50%;
 }
+/* Action button (left side) */
 #touch-action-btn {
   position: absolute;
-  bottom: 55px; right: 16px;
-  width: 56px; height: 56px;
+  bottom: 40px; left: 20px;
+  width: 64px; height: 64px;
   background: rgba(126,200,227,0.3);
   border: 2px solid rgba(126,200,227,0.6);
   border-radius: 50%;
   color: rgba(126,200,227,0.9);
-  font-family: monospace; font-size: 11px; font-weight: bold;
+  font-family: monospace; font-size: 12px; font-weight: bold;
   z-index: 20;
   display: none;
   align-items: center; justify-content: center;
@@ -168,14 +151,8 @@ canvas {
     <div id="enter-prompt"></div>
   </div>
   <button id="music-btn" style="display:none;">Music: ON</button>
-  <div id="touch-controls">
-    <div class="dpad-btn dpad-up" data-dir="up">&#9650;</div>
-    <div class="dpad-btn dpad-down" data-dir="down">&#9660;</div>
-    <div class="dpad-btn dpad-left" data-dir="left">&#9664;</div>
-    <div class="dpad-btn dpad-right" data-dir="right">&#9654;</div>
-    <div class="dpad-btn dpad-center" id="dpad-action">ACT</div>
-  </div>
-  <div id="touch-action-btn">ENTER</div>
+  <div id="joystick-area"><canvas id="joystick-canvas" width="120" height="120"></canvas></div>
+  <div id="touch-action-btn">ACT</div>
 </div>
 
 <script>
@@ -332,27 +309,91 @@ function handleAction() {
   }
 }
 
-// ---- TOUCH CONTROLS ----
-const touchDirs = { up: false, down: false, left: false, right: false };
+// ---- TOUCH CONTROLS (Omnidirectional Joystick) ----
+const joystick = { x: 0, y: 0, active: false }; // -1 to 1 range
+let joystickTouchId = null;
 
 function setupTouch() {
   if (!isTouchDevice) return;
-  document.getElementById('touch-controls').style.display = 'block';
+  document.getElementById('joystick-area').style.display = 'block';
   document.getElementById('touch-action-btn').style.display = 'flex';
 
-  document.querySelectorAll('.dpad-btn[data-dir]').forEach(btn => {
-    const dir = btn.dataset.dir;
-    btn.addEventListener('touchstart', e => { e.preventDefault(); touchDirs[dir] = true; btn.classList.add('active'); }, {passive:false});
-    btn.addEventListener('touchend', e => { e.preventDefault(); touchDirs[dir] = false; btn.classList.remove('active'); }, {passive:false});
-    btn.addEventListener('touchcancel', e => { touchDirs[dir] = false; btn.classList.remove('active'); });
-  });
+  const jArea = document.getElementById('joystick-area');
+  const jCanvas = document.getElementById('joystick-canvas');
+  const jCtx = jCanvas.getContext('2d');
+  const jR = 60; // radius of outer ring
+  const knobR = 22; // radius of thumb knob
 
-  // Center action button on d-pad
-  document.getElementById('dpad-action').addEventListener('touchstart', e => {
-    e.preventDefault(); handleAction();
+  function drawJoystick() {
+    jCtx.clearRect(0, 0, 120, 120);
+    // Outer ring
+    jCtx.beginPath();
+    jCtx.arc(60, 60, jR-2, 0, Math.PI*2);
+    jCtx.fillStyle = 'rgba(232,193,112,0.12)';
+    jCtx.fill();
+    jCtx.strokeStyle = 'rgba(232,193,112,0.35)';
+    jCtx.lineWidth = 2;
+    jCtx.stroke();
+    // Inner knob
+    const kx = 60 + joystick.x * (jR - knobR);
+    const ky = 60 + joystick.y * (jR - knobR);
+    jCtx.beginPath();
+    jCtx.arc(kx, ky, knobR, 0, Math.PI*2);
+    jCtx.fillStyle = joystick.active ? 'rgba(232,193,112,0.5)' : 'rgba(232,193,112,0.25)';
+    jCtx.fill();
+    jCtx.strokeStyle = 'rgba(232,193,112,0.6)';
+    jCtx.lineWidth = 2;
+    jCtx.stroke();
+    requestAnimationFrame(drawJoystick);
+  }
+  drawJoystick();
+
+  function getJoystickPos(touch) {
+    const rect = jArea.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    let dx = (touch.clientX - cx) / (rect.width / 2);
+    let dy = (touch.clientY - cy) / (rect.height / 2);
+    // Clamp to circle
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist > 1) { dx /= dist; dy /= dist; }
+    return { x: dx, y: dy };
+  }
+
+  jArea.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    joystickTouchId = touch.identifier;
+    const pos = getJoystickPos(touch);
+    joystick.x = pos.x;
+    joystick.y = pos.y;
+    joystick.active = true;
   }, {passive:false});
 
-  // Big action button
+  jArea.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for (const touch of e.changedTouches) {
+      if (touch.identifier === joystickTouchId) {
+        const pos = getJoystickPos(touch);
+        joystick.x = pos.x;
+        joystick.y = pos.y;
+      }
+    }
+  }, {passive:false});
+
+  function releaseJoystick(e) {
+    for (const touch of e.changedTouches) {
+      if (touch.identifier === joystickTouchId) {
+        joystick.x = 0; joystick.y = 0;
+        joystick.active = false;
+        joystickTouchId = null;
+      }
+    }
+  }
+  jArea.addEventListener('touchend', releaseJoystick, {passive:false});
+  jArea.addEventListener('touchcancel', releaseJoystick, {passive:false});
+
+  // Action button (left side)
   document.getElementById('touch-action-btn').addEventListener('touchstart', e => {
     e.preventDefault(); handleAction();
   }, {passive:false});
@@ -1388,21 +1429,21 @@ function checkProximity() {
   const ab = document.getElementById('touch-action-btn');
 
   for (const b of buildings) {
-    const dx = b.doorX*TILE, dy = b.doorY*TILE;
-    const dist = Math.hypot(player.x+10-dx, player.y+12-dy);
+    const bx = b.doorX*TILE, by = b.doorY*TILE;
+    const dist = Math.hypot(player.x+10-bx, player.y+12-by);
     if (dist < 36) {
       nearBuilding = b;
       ep.style.display = 'block';
-      ep.textContent = isTouchDevice ? `Tap ENTER for ${b.name}` : `Press ENTER for ${b.name}`;
-      ab.textContent = 'ENTER';
-      ab.style.background = 'rgba(232,193,112,0.3)';
-      ab.style.borderColor = 'rgba(232,193,112,0.6)';
-      ab.style.color = 'rgba(232,193,112,0.9)';
+      ep.textContent = isTouchDevice ? `Tap ACT for ${b.name}` : `Press ENTER for ${b.name}`;
+      ab.textContent = 'GO';
+      ab.style.background = 'rgba(232,193,112,0.4)';
+      ab.style.borderColor = 'rgba(232,193,112,0.7)';
+      ab.style.color = '#e8c170';
       return;
     }
   }
   ep.style.display = 'none';
-  ab.textContent = 'TALK';
+  ab.textContent = 'ACT';
   ab.style.background = 'rgba(126,200,227,0.3)';
   ab.style.borderColor = 'rgba(126,200,227,0.6)';
   ab.style.color = 'rgba(126,200,227,0.9)';
@@ -1425,14 +1466,25 @@ function update() {
   if (keys['ArrowUp']||keys['w']||keys['W']) { dy=-player.speed; player.dir=3; }
   if (keys['ArrowDown']||keys['s']||keys['S']) { dy=player.speed; player.dir=0; }
 
-  // Touch d-pad
-  if (touchDirs.left) { dx=-player.speed; player.dir=1; }
-  if (touchDirs.right) { dx=player.speed; player.dir=2; }
-  if (touchDirs.up) { dy=-player.speed; player.dir=3; }
-  if (touchDirs.down) { dy=player.speed; player.dir=0; }
+  // Touch joystick (omnidirectional, analog)
+  if (joystick.active) {
+    const deadzone = 0.15;
+    if (Math.abs(joystick.x) > deadzone || Math.abs(joystick.y) > deadzone) {
+      dx += joystick.x * player.speed;
+      dy += joystick.y * player.speed;
+      // Set facing direction based on dominant axis
+      if (Math.abs(joystick.x) > Math.abs(joystick.y)) {
+        player.dir = joystick.x < 0 ? 1 : 2;
+      } else {
+        player.dir = joystick.y < 0 ? 3 : 0;
+      }
+    }
+  }
 
   if (dx!==0||dy!==0) player.moving = true;
-  if (dx!==0&&dy!==0) { dx*=0.707; dy*=0.707; }
+  // Clamp diagonal speed
+  const mag = Math.sqrt(dx*dx+dy*dy);
+  if (mag > player.speed) { dx = dx/mag*player.speed; dy = dy/mag*player.speed; }
 
   if (dx!==0 && !isBlocked(player.x+dx,player.y,player.w,player.h)) player.x+=dx;
   if (dy!==0 && !isBlocked(player.x,player.y+dy,player.w,player.h)) player.y+=dy;
