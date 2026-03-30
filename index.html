@@ -2008,11 +2008,10 @@ function checkProximity() {
 // ---- UPDATE ----
 function update() {
   if (!gameStarted || dialogueActive) return;
-  // Walk-into-building animation: walk 20 frames, stop, fade 40 frames, navigate
+  // Walk-into-building animation: walk in, fade, navigate immediately once inside
   if (enteringBuilding && enterBuildingAnim) {
     enterBuildingAnim.timer++;
-    const walkFrames = 20;
-    const fadeFrames = 40;
+    const walkFrames = 12;
     if (enterBuildingAnim.timer <= walkFrames) {
       // Walk phase: move player toward door/building
       const t = enterBuildingAnim.timer / walkFrames;
@@ -2021,12 +2020,11 @@ function update() {
       player.moving = true;
       player.animTimer++;
       if (player.animTimer > 6) { player.animFrame++; player.animTimer = 0; }
+      // Start fade immediately while walking
+      enterBuildingAnim.fadeAlpha = t * 0.6;
     } else {
-      // Fade phase: player stopped, screen fades to black
-      player.moving = false;
-      enterBuildingAnim.fadeAlpha = (enterBuildingAnim.timer - walkFrames) / fadeFrames;
-    }
-    if (enterBuildingAnim.timer >= walkFrames + fadeFrames) {
+      // Walk done - navigate now
+      enterBuildingAnim.fadeAlpha = 1;
       window.location.href = enterBuildingAnim.building.url;
     }
     return;
