@@ -807,73 +807,98 @@ function drawBuilding(b) {
   switch(b.special) {
 
     case 'tower': {
-      // HIGH FALLS: Open courtyard with a very tall tower
-      // Courtyard walls (low, open feel)
-      ctx.fillStyle = 'rgba(0,0,0,0.15)';
-      ctx.fillRect(x+4, y+4, w, h);
-      // Courtyard floor (sandy/open)
-      ctx.fillStyle = '#b8a882';
-      ctx.fillRect(x, y, w, h);
-      // Low walls around courtyard (not solid - open feel)
-      ctx.fillStyle = '#6080aa';
-      ctx.fillRect(x, y, w, 4); // top wall
-      ctx.fillRect(x, y, 4, h); // left wall
-      ctx.fillRect(x+w-4, y, 4, h); // right wall
-      if (!doorAtTop) ctx.fillRect(x, y+h-4, w, 4); // bottom wall (gap for door)
-      else ctx.fillRect(x, y, w, 4);
-      // THE TOWER - tall and imposing, rising from center of courtyard
-      const tx = x + w/2 - 12, ty = y - 48;
-      // Tower shadow
-      ctx.fillStyle = 'rgba(0,0,0,0.15)';
-      ctx.fillRect(tx+4, y+8, 24, h-12);
-      // Tower body
-      ctx.fillStyle = '#3a5a8c';
-      ctx.fillRect(tx, ty + 10, 24, h + 38);
-      // Tower darker side for depth
-      ctx.fillStyle = '#2c4a7c';
-      ctx.fillRect(tx+18, ty+10, 6, h+38);
-      // Tower top crenellations
-      ctx.fillStyle = '#4a6fa5';
-      for (let i=0;i<4;i++) ctx.fillRect(tx+i*7, ty+4, 5, 8);
-      // Tower peak/spire
-      ctx.fillStyle = '#7ec8e3';
-      ctx.fillRect(tx+8, ty-8, 8, 14);
-      ctx.fillRect(tx+10, ty-14, 4, 8);
-      // Height markers on tower
-      ctx.fillStyle = '#7ec8e3';
-      for (let i=0;i<5;i++) {
-        ctx.fillRect(tx+2, ty+18+i*10, 8, 1);
-        // Numbers
-        ctx.fillStyle = '#c0ddf0';
-        ctx.font = '6px monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText(`${50-i*10}ft`, tx+2, ty+17+i*10);
-        ctx.fillStyle = '#7ec8e3';
+      // HIGH FALLS: Scaffolding structure with a big ladder
+      const scaffH = h + 60; // tall scaffolding
+      const scaffTop = y - 60;
+
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      ctx.fillRect(x+4, scaffTop+4, w, scaffH);
+
+      // Ground/base platform
+      ctx.fillStyle = '#888';
+      ctx.fillRect(x-4, y+h-4, w+8, 6);
+
+      // Scaffolding vertical poles (metal grey)
+      ctx.fillStyle = '#889';
+      ctx.fillRect(x+2, scaffTop, 4, scaffH); // left pole
+      ctx.fillRect(x+w-6, scaffTop, 4, scaffH); // right pole
+      ctx.fillRect(x+w/2-2, scaffTop, 4, scaffH); // center pole
+      // Darker side for depth
+      ctx.fillStyle = '#667';
+      ctx.fillRect(x+4, scaffTop, 2, scaffH);
+      ctx.fillRect(x+w-4, scaffTop, 2, scaffH);
+
+      // Horizontal platforms every ~16px
+      for (let i=0;i<8;i++) {
+        const py = scaffTop + 8 + i*10;
+        // Platform planks (wood)
+        ctx.fillStyle = '#a08050';
+        ctx.fillRect(x, py, w, 4);
+        ctx.fillStyle = '#8a7040';
+        ctx.fillRect(x, py+3, w, 1);
+        // Cross bracing (X pattern between platforms)
+        if (i < 7) {
+          ctx.fillStyle = '#778';
+          // Left X brace
+          for (let j=0;j<8;j++) {
+            ctx.fillRect(x+2+j*2, py+4+j, 2, 1);
+            ctx.fillRect(x+w/2-4-j*2, py+4+j, 2, 1);
+          }
+          // Right X brace
+          for (let j=0;j<8;j++) {
+            ctx.fillRect(x+w/2+j*2, py+4+j, 2, 1);
+            ctx.fillRect(x+w-4-j*2, py+4+j, 2, 1);
+          }
+        }
       }
-      // Tower windows (lit up)
-      ctx.fillStyle = '#ffdd88';
-      ctx.fillRect(tx+6, ty+20, 5, 6);
-      ctx.fillRect(tx+14, ty+36, 5, 6);
-      ctx.fillRect(tx+6, ty+50, 5, 6);
-      // Crash mat at base inside courtyard
+
+      // BIG LADDER on the right side
+      const lx = x+w-14;
+      // Ladder rails
+      ctx.fillStyle = '#bb8830';
+      ctx.fillRect(lx, scaffTop-4, 3, scaffH+8);
+      ctx.fillRect(lx+10, scaffTop-4, 3, scaffH+8);
+      // Ladder rungs
+      ctx.fillStyle = '#cc9940';
+      for (let i=0;i<14;i++) {
+        ctx.fillRect(lx+2, scaffTop+i*6, 9, 2);
+      }
+
+      // Safety net at bottom
       ctx.fillStyle = '#4466cc';
-      ctx.fillRect(x+8, y+h-20, w-16, 12);
+      ctx.fillRect(x+4, y+h-16, w-8, 10);
       ctx.fillStyle = '#5577dd';
-      ctx.fillRect(x+10, y+h-18, w-20, 8);
-      // X marks the landing spot
-      ctx.fillStyle = '#ff4444';
-      ctx.fillRect(x+w/2-6, y+h-16, 12, 2);
-      ctx.fillRect(x+w/2-1, y+h-21, 2, 12);
-      // Open doorway
+      ctx.fillRect(x+6, y+h-14, w-12, 6);
+      // Net pattern
+      ctx.fillStyle = '#4466cc';
+      for (let i=0;i<5;i++) ctx.fillRect(x+8+i*8, y+h-14, 1, 6);
+
+      // Height markers
+      ctx.fillStyle = '#ffcc44';
+      ctx.font = '6px monospace';
+      ctx.textAlign = 'right';
+      for (let i=0;i<5;i++) {
+        const my = scaffTop + 10 + i*16;
+        ctx.fillRect(x-2, my, 6, 1);
+        ctx.fillText(`${80-i*20}'`, x-4, my+3);
+      }
+
+      // Warning tape at base
+      ctx.fillStyle = '#ffcc00';
+      ctx.fillRect(x-6, y+h, w+12, 3);
+      ctx.fillStyle = '#222';
+      for (let i=0;i<8;i++) ctx.fillRect(x-6+i*7, y+h, 3, 3);
+
+      // Open doorway (gap in scaffolding base)
       const dy1 = doorAtTop ? y-4 : y+h-12;
       ctx.fillStyle = '#0a0a1a';
-      ctx.fillRect(x+w/2-8, dy1, 16, 16);
+      ctx.fillRect(x+w/2-8, dy1, 16, 14);
       ctx.fillStyle = '#1a1a2a';
-      ctx.fillRect(x+w/2-6, dy1+2, 12, 12);
-      // Door frame
-      ctx.fillStyle = '#6080aa';
-      ctx.fillRect(x+w/2-9, dy1, 2, 16);
-      ctx.fillRect(x+w/2+7, dy1, 2, 16);
+      ctx.fillRect(x+w/2-6, dy1+2, 12, 10);
+      ctx.fillStyle = '#889';
+      ctx.fillRect(x+w/2-9, dy1, 2, 14);
+      ctx.fillRect(x+w/2+7, dy1, 2, 14);
       ctx.fillRect(x+w/2-9, dy1, 18, 2);
       break;
     }
@@ -1130,64 +1155,76 @@ function drawBuilding(b) {
     }
 
     case 'office': {
-      // STUNT COORDINATOR: Shaped like a baseball hat
+      // STUNT COORDINATOR: Grey/red building wearing sunglasses (overhead view)
       // Shadow
       ctx.fillStyle = 'rgba(0,0,0,0.15)';
-      ctx.fillRect(x+4, y+4, w+8, h);
-      // Hat BRIM (wide, extending forward)
-      const brimY = doorAtTop ? y-6 : y+h-8;
-      ctx.fillStyle = '#1a4a16';
-      ctx.fillRect(x-10, brimY, w+20, 12);
-      // Brim curve/shadow
-      ctx.fillStyle = '#124010';
-      ctx.fillRect(x-8, brimY+10, w+16, 3);
-      // Hat CROWN (dome shape - the main building)
-      ctx.fillStyle = '#2d5a27';
+      ctx.fillRect(x+4, y+4, w, h);
+
+      // Main building body (grey)
+      ctx.fillStyle = '#707070';
       ctx.fillRect(x, y, w, h);
-      // Dome top (rounded with steps)
-      ctx.fillStyle = '#2d5a27';
-      ctx.fillRect(x+4, y-8, w-8, 10);
-      ctx.fillRect(x+10, y-14, w-20, 8);
-      ctx.fillRect(x+16, y-18, w-32, 6);
-      // Hat button on top
-      ctx.fillStyle = '#90c948';
-      ctx.fillRect(x+w/2-4, y-22, 8, 6);
-      // Hat panel lines
-      ctx.fillStyle = '#1a4a16';
-      ctx.fillRect(x+w/2-1, y-18, 2, h+16);
-      ctx.fillRect(x+w/4, y-10, 2, h+8);
-      ctx.fillRect(x+3*w/4, y-10, 2, h+8);
-      // Hat logo/emblem (star badge - coordinator authority)
+      // Lighter top section
+      ctx.fillStyle = '#808080';
+      ctx.fillRect(x+2, y+2, w-4, h/2);
+      // Red accent stripe across the middle
+      ctx.fillStyle = '#cc2222';
+      ctx.fillRect(x, y+h/2-3, w, 8);
+      ctx.fillStyle = '#aa1818';
+      ctx.fillRect(x, y+h/2+3, w, 2);
+      // Red roof trim
+      ctx.fillStyle = '#cc2222';
+      ctx.fillRect(x-2, y-4, w+4, 6);
+      ctx.fillRect(x-2, y+h-2, w+4, 4);
+
+      // === BIG SUNGLASSES (overhead, spanning the top of building) ===
+      const glassY = y + 8;
+      const glassH = 20;
+      const glassW = 18;
+      const bridge = 6;
+      // Left lens
+      ctx.fillStyle = '#111';
+      ctx.fillRect(x+4, glassY, glassW, glassH);
+      // Right lens
+      ctx.fillRect(x+w-4-glassW, glassY, glassW, glassH);
+      // Lens frames (dark red)
+      ctx.fillStyle = '#881111';
+      ctx.fillRect(x+2, glassY-2, glassW+4, 2); // top left
+      ctx.fillRect(x+2, glassY+glassH, glassW+4, 2); // bottom left
+      ctx.fillRect(x+2, glassY-2, 2, glassH+4); // left side left
+      ctx.fillRect(x+4+glassW, glassY-2, 2, glassH+4); // right side left
+      ctx.fillRect(x+w-6-glassW, glassY-2, glassW+4, 2); // top right
+      ctx.fillRect(x+w-6-glassW, glassY+glassH, glassW+4, 2); // bottom right
+      ctx.fillRect(x+w-6-glassW, glassY-2, 2, glassH+4); // left side right
+      ctx.fillRect(x+w-4, glassY-2, 2, glassH+4); // right side right
+      // Bridge between lenses
+      ctx.fillStyle = '#881111';
+      ctx.fillRect(x+4+glassW, glassY+glassH/2-2, w-8-glassW*2, 4);
+      // Lens shine/reflection
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.fillRect(x+6, glassY+3, 6, 4);
+      ctx.fillRect(x+w-2-glassW, glassY+3, 6, 4);
+      // Arms extending to sides
+      ctx.fillStyle = '#881111';
+      ctx.fillRect(x-8, glassY+glassH/2-1, 12, 3);
+      ctx.fillRect(x+w-4, glassY+glassH/2-1, 12, 3);
+
+      // Red star badge below glasses
       ctx.fillStyle = '#ffdb58';
-      const ex = x+w/2, ey = y+h/2-2;
-      ctx.fillRect(ex-6, ey, 12, 12);
-      ctx.fillStyle = '#e8c170';
-      ctx.fillRect(ex-4, ey+2, 8, 8);
-      // Star in the badge
+      const bx = x+w/2, by = y+h-18;
+      ctx.fillRect(bx-5, by, 10, 10);
+      ctx.fillStyle = '#cc2222';
+      ctx.fillRect(bx-3, by+2, 6, 6);
       ctx.fillStyle = '#ffdb58';
-      ctx.fillRect(ex-1, ey+1, 2, 10);
-      ctx.fillRect(ex-4, ey+4, 8, 2);
-      ctx.fillRect(ex-3, ey+3, 2, 2);
-      ctx.fillRect(ex+1, ey+3, 2, 2);
-      ctx.fillRect(ex-3, ey+7, 2, 2);
-      ctx.fillRect(ex+1, ey+7, 2, 2);
-      // "COORD" text on hat
-      ctx.fillStyle = '#f0e6d0';
-      ctx.font = 'bold 7px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('STUNT', x+w/2, y+h-10);
-      ctx.fillText('COORD', x+w/2, y+h-3);
-      // Windows (like eyes on the hat)
-      ctx.fillStyle = '#c0d8f0';
-      ctx.fillRect(x+6, y+10, 8, 8);
-      ctx.fillRect(x+w-14, y+10, 8, 8);
+      ctx.fillRect(bx-1, by+1, 2, 8);
+      ctx.fillRect(bx-3, by+4, 6, 2);
+
       // Open doorway
       const dy4 = doorAtTop ? y-6 : y+h-2;
       ctx.fillStyle = '#0a0a1a';
       ctx.fillRect(x+w/2-8, dy4, 16, 14);
       ctx.fillStyle = '#1a1a2a';
       ctx.fillRect(x+w/2-6, dy4+2, 12, 10);
-      ctx.fillStyle = '#1a4a16';
+      ctx.fillStyle = '#666';
       ctx.fillRect(x+w/2-9, dy4, 2, 14);
       ctx.fillRect(x+w/2+7, dy4, 2, 14);
       ctx.fillRect(x+w/2-9, dy4, 18, 2);
@@ -1196,13 +1233,22 @@ function drawBuilding(b) {
   }
 
   // Sign (below for top-facing buildings, above for bottom-facing)
-  const signY = doorAtTop ? y+h+14 : y-26;
-  ctx.fillStyle = 'rgba(0,0,0,0.75)';
-  ctx.fillRect(x, signY, w, 14);
+  const signY = doorAtTop ? y+h+16 : y-32;
+  const signW = Math.max(w+20, 70);
+  const signX = x+w/2-signW/2;
+  ctx.fillStyle = 'rgba(0,0,0,0.85)';
+  ctx.fillRect(signX, signY, signW, 20);
+  // Sign border
   ctx.fillStyle = b.accent;
-  ctx.font = 'bold 9px monospace';
+  ctx.fillRect(signX, signY, signW, 2);
+  ctx.fillRect(signX, signY+18, signW, 2);
+  ctx.fillRect(signX, signY, 2, 20);
+  ctx.fillRect(signX+signW-2, signY, 2, 20);
+  // Text
+  ctx.fillStyle = b.accent;
+  ctx.font = 'bold 11px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText(b.name, x+w/2, signY+10);
+  ctx.fillText(b.name, x+w/2, signY+14);
 }
 
 function drawPlayer() {
