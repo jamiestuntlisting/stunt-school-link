@@ -79,8 +79,12 @@ canvas {
   position: fixed; top:0; left:0; width:100%; height:100%;
   background: #0a0a1a;
   display: flex; flex-direction: column; justify-content: center; align-items: center;
-  z-index: 100; transition: opacity 0.8s;
+  z-index: 100;
+  opacity: 0;
+  animation: splashFadeIn 1.5s ease-out forwards, splashFadeOut 1.2s ease-in 3.5s forwards;
 }
+@keyframes splashFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes splashFadeOut { from { opacity: 1; } to { opacity: 0; } }
 #title-screen h1 {
   font-family: monospace; font-size: 36px; color: #e8c170;
   text-shadow: 3px 3px 0 #8b4513, 0 0 20px rgba(232,193,112,0.3);
@@ -88,13 +92,7 @@ canvas {
 }
 #title-screen h2 {
   font-family: monospace; font-size: 16px; color: #7ec8e3;
-  margin-bottom: 32px; font-weight: normal;
-}
-#title-screen .start-text {
-  font-family: monospace; font-size: 15px; color: #f0e6d0;
-  animation: pulse 1.5s ease-in-out infinite;
-  cursor: pointer; padding: 12px 24px;
-  border: 2px solid #e8c170; border-radius: 8px;
+  font-weight: normal;
 }
 #music-btn {
   position: absolute; top: 8px; right: 8px; z-index: 50;
@@ -137,7 +135,6 @@ canvas {
 <div id="title-screen">
   <h1>STUNT SCHOOL</h1>
   <h2>A Stunt Person's Journey</h2>
-  <div class="start-text" id="start-btn">Tap to Start</div>
 </div>
 
 <div id="game-wrapper">
@@ -279,7 +276,6 @@ const npcTalkCount = {}; // tracks which round each NPC is on
 const keys = {};
 window.addEventListener('keydown', e => {
   keys[e.key] = true;
-  if (!gameStarted && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); startGame(); }
   if (e.key === ' ' || e.key === 'e' || e.key === 'E') {
     e.preventDefault();
     handleAction();
@@ -399,21 +395,40 @@ function setupTouch() {
   }, {passive:false});
 }
 
-// Title screen
-document.getElementById('start-btn').addEventListener('click', startGame);
-document.getElementById('start-btn').addEventListener('touchstart', e => { e.preventDefault(); startGame(); }, {passive:false});
-
+// Auto-start after splash fades (splash fades in 1.5s, holds, fades out at 3.5s over 1.2s)
 function startGame() {
   if (gameStarted) return;
-  const title = document.getElementById('title-screen');
-  title.style.opacity = '0';
-  setTimeout(() => { title.style.display = 'none'; }, 800);
   gameStarted = true;
+  const title = document.getElementById('title-screen');
+  title.style.display = 'none';
   document.getElementById('music-btn').style.display = 'block';
-  initAudio();
-  playMusic();
   setupTouch();
 }
+
+// Auto-start after splash animation completes (3.5s delay + 1.2s fade = 4.7s)
+setTimeout(startGame, 4700);
+
+// Also allow tap/click/key to skip the splash early
+function skipSplash() {
+  if (gameStarted) return;
+  initAudio();
+  playMusic();
+  startGame();
+}
+document.getElementById('title-screen').addEventListener('click', skipSplash);
+document.getElementById('title-screen').addEventListener('touchstart', e => { e.preventDefault(); skipSplash(); }, {passive:false});
+window.addEventListener('keydown', function splashKey(e) {
+  if (!gameStarted) { skipSplash(); window.removeEventListener('keydown', splashKey); }
+});
+// Start music on first interaction after auto-start
+document.addEventListener('click', function firstClick() {
+  if (gameStarted && !musicPlaying) { initAudio(); playMusic(); }
+  document.removeEventListener('click', firstClick);
+}, {once:true});
+document.addEventListener('touchstart', function firstTouch() {
+  if (gameStarted && !musicPlaying) { initAudio(); playMusic(); }
+  document.removeEventListener('touchstart', firstTouch);
+}, {once:true});
 
 // ---- PLAYER ----
 const player = {
