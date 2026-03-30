@@ -742,7 +742,7 @@ function isBlocked(px, py, pw, ph) {
     const doorCy = b.doorY * TILE;
     const pcx = px + pw/2;
     const pcy = py + ph/2;
-    const inDoorZone = Math.abs(pcx - doorCx) < 20 && Math.abs(pcy - doorCy) < TILE;
+    const inDoorZone = Math.abs(pcx - doorCx) < 30 && Math.abs(pcy - doorCy) < TILE * 1.5;
     if (inDoorZone) continue;
 
     const bx1 = b.x * TILE, by1 = b.y * TILE;
@@ -1968,7 +1968,7 @@ function checkProximity() {
   for (const b of buildings) {
     const bx = b.doorX*TILE, by = b.doorY*TILE;
     const dist = Math.hypot(player.x+10-bx, player.y+12-by);
-    if (dist < 18 && !enteringBuilding) {
+    if (dist < 28 && !enteringBuilding) {
       // Start walk-into-building animation
       enteringBuilding = true;
       const tagMap = {'STAIR FALLS':'stairfalls','FIRE BURNS':'fireburns','HIGH FALLS':'highfalls','STUNT COORD':'stuntcoord'};
