@@ -443,8 +443,23 @@ let enterBuildingAnim = null; // {building, timer, targetX, targetY}
 // Fix back button: if browser restores page from bfcache mid-navigation, full reset
 window.addEventListener('pageshow', function(e) {
   if (e.persisted || enteringBuilding) {
+    // Move player back outside the building they walked into
+    if (enterBuildingAnim && enterBuildingAnim.building) {
+      const b = enterBuildingAnim.building;
+      if (b.doorSide === 'bottom') {
+        player.x = b.doorX * TILE - 10;
+        player.y = (b.doorY + 1) * TILE;
+        player.dir = 0; // face down
+      } else {
+        player.x = b.doorX * TILE - 10;
+        player.y = (b.doorY - 1.5) * TILE;
+        player.dir = 3; // face up
+      }
+    }
     enteringBuilding = false;
     enterBuildingAnim = null;
+    // Remove the localStorage entry so it doesn't trigger return animation
+    localStorage.removeItem('stuntschool_lastbuilding');
     // Hide lingering prompts
     const ep = document.getElementById('enter-prompt');
     if (ep) ep.style.display = 'none';
