@@ -436,10 +436,10 @@ function getSpawnPos() {
     localStorage.removeItem('stuntschool_lastbuilding');
     // Spawn outside the door of the building they just visited
     const spawns = {
-      'stairfalls': { x: 4 * TILE, y: 7 * TILE, dir: 0 },
-      'fireburns':  { x: 12 * TILE, y: 7 * TILE, dir: 0 },
-      'highfalls':  { x: 4 * TILE, y: 22 * TILE, dir: 3 },
-      'stuntcoord': { x: 12 * TILE, y: 22 * TILE, dir: 3 }
+      'stairfalls': { x: 4 * TILE, y: 8 * TILE, dir: 0 },
+      'fireburns':  { x: 12 * TILE, y: 8 * TILE, dir: 0 },
+      'highfalls':  { x: 4 * TILE, y: 21 * TILE, dir: 3 },
+      'stuntcoord': { x: 12 * TILE, y: 21 * TILE, dir: 3 }
     };
     if (spawns[lastBuilding]) return spawns[lastBuilding];
   }
@@ -700,17 +700,19 @@ function isBlocked(px, py, pw, ph) {
     }
   }
   for (const b of buildings) {
+    // Check if player is near the door zone FIRST - always allow
+    const doorCx = b.doorX * TILE;
+    const doorCy = b.doorY * TILE;
+    const pcx = px + pw/2;
+    const pcy = py + ph/2;
+    const inDoorZone = Math.abs(pcx - doorCx) < 20 && Math.abs(pcy - doorCy) < TILE;
+    if (inDoorZone) continue; // near door - never block
+
+    // Building collision rect - extend slightly beyond the building edges
+    // to catch the door approach area
     const bx1 = b.x * TILE, by1 = b.y * TILE;
     const bx2 = (b.x + b.w) * TILE, by2 = (b.y + b.h) * TILE;
     if (px + pw > bx1 && px < bx2 && py + ph > by1 && py < by2) {
-      // Allow walking through the open doorway
-      const doorCx = b.doorX * TILE;
-      const doorCy = b.doorY * TILE;
-      const pcx = px + pw/2;
-      const pcy = py + ph/2;
-      if (Math.abs(pcx - doorCx) < 20 && Math.abs(pcy - doorCy) < 28) {
-        continue; // door zone - don't block
-      }
       return true;
     }
   }
@@ -1737,7 +1739,7 @@ function checkProximity() {
   for (const b of buildings) {
     const bx = b.doorX*TILE, by = b.doorY*TILE;
     const dist = Math.hypot(player.x+10-bx, player.y+12-by);
-    if (dist < 22 && !enteringBuilding) {
+    if (dist < 30 && !enteringBuilding) {
       // Freeze controls and navigate
       enteringBuilding = true;
       // Save which building for return spawn
