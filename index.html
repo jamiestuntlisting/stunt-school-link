@@ -427,11 +427,31 @@ document.addEventListener('touchstart', function firstTouch() {
 }, {once:true});
 
 // ---- PLAYER ----
+let enteringBuilding = false; // locks controls when walking into a door
+
+// Spawn position: check localStorage for returning from a building
+function getSpawnPos() {
+  const lastBuilding = localStorage.getItem('stuntschool_lastbuilding');
+  if (lastBuilding) {
+    localStorage.removeItem('stuntschool_lastbuilding');
+    // Spawn outside the door of the building they just visited
+    const spawns = {
+      'stairfalls': { x: 3 * TILE, y: 5.5 * TILE, dir: 0 },
+      'fireburns':  { x: 8 * TILE, y: 5.5 * TILE, dir: 0 },
+      'highfalls':  { x: 3 * TILE, y: 13.5 * TILE, dir: 3 },
+      'stuntcoord': { x: 8 * TILE, y: 13.5 * TILE, dir: 3 }
+    };
+    if (spawns[lastBuilding]) return spawns[lastBuilding];
+  }
+  return { x: 5.5 * TILE, y: 10.5 * TILE, dir: 0 };
+}
+const spawn = getSpawnPos();
+
 const player = {
-  x: 5.5 * TILE, y: 10.5 * TILE,
+  x: spawn.x, y: spawn.y,
   w: 20, h: 24,
   speed: 2.2,
-  dir: 0, animFrame: 0, animTimer: 0, moving: false
+  dir: spawn.dir || 0, animFrame: 0, animTimer: 0, moving: false
 };
 
 // ---- MAP ----
@@ -1592,9 +1612,16 @@ function checkProximity() {
   for (const b of buildings) {
     const bx = b.doorX*TILE, by = b.doorY*TILE;
     const dist = Math.hypot(player.x+10-bx, player.y+12-by);
-    if (dist < 12) {
-      // Walked right in!
-      window.location.href = b.url;
+    if (dist < 12 && !enteringBuilding) {
+      // Freeze controls and navigate
+      enteringBuilding = true;
+      // Save which building for return spawn
+      const tagMap = {'STAIR FALLS':'stairfalls','FIRE BURNS':'fireburns','HIGH FALLS':'highfalls','STUNT COORD':'stuntcoord'};
+      localStorage.setItem('stuntschool_lastbuilding', tagMap[b.name] || '');
+      // Small delay so player visually disappears into the door
+      setTimeout(() => {
+        window.location.href = b.url;
+      }, 300);
       return;
     }
     if (dist < 48) {
@@ -1615,7 +1642,7 @@ function checkProximity() {
 
 // ---- UPDATE ----
 function update() {
-  if (!gameStarted || dialogueActive) return;
+  if (!gameStarted || dialogueActive || enteringBuilding) return;
   player.moving = false;
   let dx = 0, dy = 0;
 
