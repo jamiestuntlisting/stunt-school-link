@@ -440,11 +440,20 @@ document.addEventListener('keydown', function firstKey() {
 let enteringBuilding = false;
 let enterBuildingAnim = null; // {building, timer, targetX, targetY}
 
-// Fix back button: if browser restores page from bfcache mid-navigation, reset state
+// Fix back button: if browser restores page from bfcache mid-navigation, full reset
 window.addEventListener('pageshow', function(e) {
-  if (e.persisted) {
+  if (e.persisted || enteringBuilding) {
     enteringBuilding = false;
     enterBuildingAnim = null;
+    // Hide lingering UI elements
+    const ep = document.getElementById('enter-prompt');
+    if (ep) ep.style.display = 'none';
+    const ab = document.getElementById('touch-action-btn');
+    if (ab) ab.style.display = 'none';
+    // Force redraw to clear the black fade overlay
+    if (typeof draw === 'function') draw();
+    // Restart game loop in case rAF was killed
+    if (typeof gameLoop === 'function') requestAnimationFrame(gameLoop);
   }
 });
 let returnAnim = null; // {type, timer} for return animations
