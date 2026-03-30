@@ -470,10 +470,10 @@ window.addEventListener('pageshow', function(e) {
     if (mb) mb.style.display = 'block';
     const jArea = document.getElementById('joystick-area');
     if (jArea && isTouchDevice) jArea.style.display = 'block';
-    // Force redraw to clear the black fade overlay
+    // Cancel any stacked game loops, then restart a single one
+    if (gameLoopId) cancelAnimationFrame(gameLoopId);
     if (typeof draw === 'function') draw();
-    // Restart game loop in case rAF was killed
-    if (typeof gameLoop === 'function') requestAnimationFrame(gameLoop);
+    gameLoopId = requestAnimationFrame(gameLoop);
   }
 });
 let returnAnim = null; // {type, timer} for return animations
@@ -2166,14 +2166,15 @@ function draw() {
   }
 }
 
+let gameLoopId = null;
 function gameLoop() {
   frame++;
   update();
   draw();
-  requestAnimationFrame(gameLoop);
+  gameLoopId = requestAnimationFrame(gameLoop);
 }
 
-gameLoop();
+gameLoopId = requestAnimationFrame(gameLoop);
 
 // ---- STARTUP (after all declarations) ----
 if (isReturning) {
