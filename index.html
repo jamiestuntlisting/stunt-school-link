@@ -475,10 +475,7 @@ for (let x = 1; x < MAP_W-1; x++) { setTile(x, 14, 1); setTile(x, 15, 1); setTil
 for (let x = 1; x < 7; x++) { setTile(x, 6, 1); setTile(x, 24, 1); }
 for (let x = 10; x < MAP_W-1; x++) { setTile(x, 6, 1); setTile(x, 24, 1); }
 
-// EXIT gate on the right side - open the wall
-map[14][MAP_W-1] = 1;
-map[15][MAP_W-1] = 1;
-map[16][MAP_W-1] = 1;
+// Gate is at the right wall - wall stays solid (player can't pass)
 
 // Water pond
 setTile(2, 11, 3); setTile(3, 11, 3); setTile(2, 12, 3); setTile(3, 12, 3); setTile(4, 12, 3);
@@ -638,7 +635,7 @@ const npcs = [
   },
   {
     name: 'Gate Guard Gary',
-    x: (MAP_W-2) * TILE - 8, y: 14 * TILE + 8,
+    x: (MAP_W-3) * TILE, y: 14 * TILE + 8,
     w: 24, h: 28,
     type: 'guard',
     rounds: [
@@ -711,7 +708,7 @@ function isBlocked(px, py, pw, ph) {
       const doorCy = b.doorY * TILE;
       const pcx = px + pw/2;
       const pcy = py + ph/2;
-      if (Math.abs(pcx - doorCx) < 14 && Math.abs(pcy - doorCy) < 20) {
+      if (Math.abs(pcx - doorCx) < 20 && Math.abs(pcy - doorCy) < 28) {
         continue; // door zone - don't block
       }
       return true;
@@ -843,10 +840,13 @@ function drawBuilding(b) {
       ctx.fillStyle = '#5577dd';
       ctx.fillRect(x+8, y+h-6, w-16, 3);
 
-      // BIG LADDER on the OUTSIDE left side
-      const ladderH = h + 40;
-      const ladderTop = y - 40;
-      const lx = x - 16;
+      // BIG LADDER leaning against the building (overlapping it)
+      const ladderH = h + 50;
+      const ladderTop = y - 50;
+      const lx = x + 6; // overlaps the building wall
+      // Ladder shadow cast on building (shows it's leaning/raised)
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.fillRect(lx+4, ladderTop+6, 16, ladderH);
       // Ladder rails
       ctx.fillStyle = '#bb8830';
       ctx.fillRect(lx, ladderTop, 3, ladderH);
@@ -856,9 +856,10 @@ function drawBuilding(b) {
       for (let i = 0; i < Math.floor(ladderH/6); i++) {
         ctx.fillRect(lx+2, ladderTop + i*6, 11, 2);
       }
-      // Ladder shadow on building wall
-      ctx.fillStyle = 'rgba(0,0,0,0.1)';
-      ctx.fillRect(x, ladderTop, 4, ladderH);
+      // Highlight on ladder rails (showing it's in front)
+      ctx.fillStyle = '#ddaa44';
+      ctx.fillRect(lx, ladderTop, 1, ladderH);
+      ctx.fillRect(lx+12, ladderTop, 1, ladderH);
 
       // Height markers on building wall
       ctx.fillStyle = '#7ec8e3';
@@ -1141,68 +1142,88 @@ function drawBuilding(b) {
     }
 
     case 'office': {
-      // STUNT COORDINATOR: Grey/red building wearing sunglasses (overhead view)
+      // STUNT COORDINATOR: Burt Reynolds face from overhead - sunglasses + mustache
+      const cx = x + w/2, cy = y + h/2;
+
       // Shadow
       ctx.fillStyle = 'rgba(0,0,0,0.15)';
       ctx.fillRect(x+4, y+4, w, h);
 
-      // Main building body (grey)
-      ctx.fillStyle = '#707070';
-      ctx.fillRect(x, y, w, h);
-      // Lighter top section
-      ctx.fillStyle = '#808080';
-      ctx.fillRect(x+2, y+2, w-4, h/2);
-      // Red accent stripe across the middle
-      ctx.fillStyle = '#cc2222';
-      ctx.fillRect(x, y+h/2-3, w, 8);
-      ctx.fillStyle = '#aa1818';
-      ctx.fillRect(x, y+h/2+3, w, 2);
-      // Red roof trim
-      ctx.fillStyle = '#cc2222';
-      ctx.fillRect(x-2, y-4, w+4, 6);
-      ctx.fillRect(x-2, y+h-2, w+4, 4);
+      // Head/face shape (skin tone, oval)
+      ctx.fillStyle = '#d4a574';
+      ctx.fillRect(x+4, y+4, w-8, h-8);
+      ctx.fillStyle = '#c89868';
+      ctx.fillRect(x+2, y+8, w-4, h-16);
+      ctx.fillStyle = '#d4a574';
+      ctx.fillRect(x, y+12, w, h-24);
 
-      // === BIG SUNGLASSES (overhead, spanning the top of building) ===
-      const glassY = y + 8;
-      const glassH = 20;
-      const glassW = 18;
-      const bridge = 6;
-      // Left lens
-      ctx.fillStyle = '#111';
-      ctx.fillRect(x+4, glassY, glassW, glassH);
+      // Dark hair (slicked back, top of head)
+      ctx.fillStyle = '#1a1008';
+      ctx.fillRect(x+2, y, w-4, 16);
+      ctx.fillRect(x, y+4, w, 10);
+      // Hair sides (sideburns going down)
+      ctx.fillRect(x, y+12, 6, 20);
+      ctx.fillRect(x+w-6, y+12, 6, 20);
+      // Hair has a slight wave/part
+      ctx.fillStyle = '#2a1a10';
+      ctx.fillRect(x+w/2-2, y+2, 4, 8);
+
+      // === BIG AVIATOR SUNGLASSES ===
+      const glassY = y + 18;
+      const glassH = 26;
+      const lensW = (w-16)/2;
+      // Left lens (big teardrop aviator shape)
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(x+4, glassY, lensW+2, glassH);
+      ctx.fillRect(x+2, glassY+4, lensW+6, glassH-8);
       // Right lens
-      ctx.fillRect(x+w-4-glassW, glassY, glassW, glassH);
-      // Lens frames (dark red)
-      ctx.fillStyle = '#881111';
-      ctx.fillRect(x+2, glassY-2, glassW+4, 2); // top left
-      ctx.fillRect(x+2, glassY+glassH, glassW+4, 2); // bottom left
-      ctx.fillRect(x+2, glassY-2, 2, glassH+4); // left side left
-      ctx.fillRect(x+4+glassW, glassY-2, 2, glassH+4); // right side left
-      ctx.fillRect(x+w-6-glassW, glassY-2, glassW+4, 2); // top right
-      ctx.fillRect(x+w-6-glassW, glassY+glassH, glassW+4, 2); // bottom right
-      ctx.fillRect(x+w-6-glassW, glassY-2, 2, glassH+4); // left side right
-      ctx.fillRect(x+w-4, glassY-2, 2, glassH+4); // right side right
-      // Bridge between lenses
-      ctx.fillStyle = '#881111';
-      ctx.fillRect(x+4+glassW, glassY+glassH/2-2, w-8-glassW*2, 4);
-      // Lens shine/reflection
-      ctx.fillStyle = 'rgba(255,255,255,0.12)';
-      ctx.fillRect(x+6, glassY+3, 6, 4);
-      ctx.fillRect(x+w-2-glassW, glassY+3, 6, 4);
-      // Arms extending to sides
-      ctx.fillStyle = '#881111';
-      ctx.fillRect(x-8, glassY+glassH/2-1, 12, 3);
-      ctx.fillRect(x+w-4, glassY+glassH/2-1, 12, 3);
+      ctx.fillRect(x+w-6-lensW, glassY, lensW+2, glassH);
+      ctx.fillRect(x+w-8-lensW, glassY+4, lensW+6, glassH-8);
+      // Gold/brown frames
+      ctx.fillStyle = '#aa7722';
+      ctx.fillRect(x+1, glassY-1, lensW+8, 2);
+      ctx.fillRect(x+w-9-lensW, glassY-1, lensW+8, 2);
+      ctx.fillRect(x+1, glassY+glassH-1, lensW+8, 2);
+      ctx.fillRect(x+w-9-lensW, glassY+glassH-1, lensW+8, 2);
+      // Bridge
+      ctx.fillStyle = '#aa7722';
+      ctx.fillRect(x+6+lensW, glassY+glassH/2-2, w-12-lensW*2, 4);
+      // Lens shine
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.fillRect(x+6, glassY+4, 8, 6);
+      ctx.fillRect(x+w-4-lensW, glassY+4, 8, 6);
+      // Arms extending to sides (temple arms)
+      ctx.fillStyle = '#aa7722';
+      ctx.fillRect(x-10, glassY+glassH/2-1, 14, 3);
+      ctx.fillRect(x+w-4, glassY+glassH/2-1, 14, 3);
 
-      // Red star badge below glasses
-      ctx.fillStyle = '#ffdb58';
-      const bx = x+w/2, by = y+h-18;
-      ctx.fillRect(bx-5, by, 10, 10);
-      ctx.fillStyle = '#cc2222';
-      ctx.fillRect(bx-3, by+2, 6, 6);
-      ctx.fillStyle = '#ffdb58';
-      ctx.fillRect(bx-1, by+1, 2, 8);
-      ctx.fillRect(bx-3, by+4, 6, 2);
+      // === BIG MUSTACHE ===
+      const mustY = glassY + glassH + 4;
+      ctx.fillStyle = '#1a1008';
+      // Thick handlebar mustache
+      ctx.fillRect(x+w/2-20, mustY, 40, 6);
+      ctx.fillRect(x+w/2-24, mustY+2, 48, 4);
+      ctx.fillRect(x+w/2-26, mustY+3, 4, 4); // left curl
+      ctx.fillRect(x+w/2+22, mustY+3, 4, 4); // right curl
+      ctx.fillRect(x+w/2-28, mustY+5, 4, 3); // left curl down
+      ctx.fillRect(x+w/2+24, mustY+5, 4, 3); // right curl down
+      // Mustache detail
+      ctx.fillStyle = '#2a1a10';
+      ctx.fillRect(x+w/2-1, mustY, 2, 6); // center part
+
+      // Nose hint (small shadow above mustache)
+      ctx.fillStyle = 'rgba(0,0,0,0.1)';
+      ctx.fillRect(x+w/2-4, mustY-4, 8, 4);
+
+      // Chin area
+      ctx.fillStyle = '#c89868';
+      ctx.fillRect(x+8, mustY+10, w-16, 12);
+      ctx.fillStyle = '#ba8858';
+      ctx.fillRect(x+12, mustY+16, w-24, 8);
+
+      // Confident smirk under mustache
+      ctx.fillStyle = '#b07050';
+      ctx.fillRect(x+w/2-8, mustY+8, 16, 2);
 
       // Open doorway
       const dy4 = doorAtTop ? y-6 : y+h-2;
@@ -1210,7 +1231,7 @@ function drawBuilding(b) {
       ctx.fillRect(x+w/2-8, dy4, 16, 14);
       ctx.fillStyle = '#1a1a2a';
       ctx.fillRect(x+w/2-6, dy4+2, 12, 10);
-      ctx.fillStyle = '#666';
+      ctx.fillStyle = '#888';
       ctx.fillRect(x+w/2-9, dy4, 2, 14);
       ctx.fillRect(x+w/2+7, dy4, 2, 14);
       ctx.fillRect(x+w/2-9, dy4, 18, 2);
@@ -1551,8 +1572,8 @@ const decorations = [
   { type: 'lamp', x: 9*TILE, y: 21*TILE },
   { type: 'lamp', x: 3*TILE, y: 14*TILE },
   { type: 'lamp', x: 13*TILE, y: 14*TILE },
-  // Gate at the exit
-  { type: 'gate', x: (MAP_W-2)*TILE, y: 13*TILE },
+  // Gate flush against the right wall
+  { type: 'gate', x: (MAP_W-1)*TILE - 6, y: 13*TILE },
 ];
 
 function drawDecoration(d) {
@@ -1657,7 +1678,7 @@ function checkProximity() {
   for (const b of buildings) {
     const bx = b.doorX*TILE, by = b.doorY*TILE;
     const dist = Math.hypot(player.x+10-bx, player.y+12-by);
-    if (dist < 12 && !enteringBuilding) {
+    if (dist < 22 && !enteringBuilding) {
       // Freeze controls and navigate
       enteringBuilding = true;
       // Save which building for return spawn
