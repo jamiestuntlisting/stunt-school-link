@@ -1142,49 +1142,64 @@ function drawBuilding(b) {
     }
 
     case 'office': {
-      // STUNT COORDINATOR: Burt Reynolds face from overhead - sunglasses + mustache
-      const cx = x + w/2, cy = y + h/2;
-
+      // STUNT COORDINATOR: Burt Reynolds face from overhead - big hair, sunglasses, mustache
       // Shadow
       ctx.fillStyle = 'rgba(0,0,0,0.15)';
       ctx.fillRect(x+4, y+4, w, h);
 
-      // Head/face shape (skin tone, oval)
+      // Head/face shape (skin tone)
       ctx.fillStyle = '#d4a574';
-      ctx.fillRect(x+4, y+4, w-8, h-8);
+      ctx.fillRect(x+6, y+20, w-12, h-28);
       ctx.fillStyle = '#c89868';
-      ctx.fillRect(x+2, y+8, w-4, h-16);
+      ctx.fillRect(x+4, y+26, w-8, h-40);
       ctx.fillStyle = '#d4a574';
-      ctx.fillRect(x, y+12, w, h-24);
+      ctx.fillRect(x+2, y+32, w-4, h-50);
 
-      // Dark hair (slicked back, top of head)
+      // === BIG VOLUMINOUS HAIR (top third of building) ===
       ctx.fillStyle = '#1a1008';
-      ctx.fillRect(x+2, y, w-4, 16);
-      ctx.fillRect(x, y+4, w, 10);
-      // Hair sides (sideburns going down)
-      ctx.fillRect(x, y+12, 6, 20);
-      ctx.fillRect(x+w-6, y+12, 6, 20);
-      // Hair has a slight wave/part
+      // Main hair mass - thick and full
+      ctx.fillRect(x-2, y-4, w+4, 36);
+      ctx.fillRect(x-4, y+2, w+8, 28);
+      ctx.fillRect(x-6, y+6, w+12, 20);
+      // Hair volume on top (big 70s style)
+      ctx.fillStyle = '#221510';
+      ctx.fillRect(x+4, y-8, w-8, 10);
+      ctx.fillRect(x+8, y-12, w-16, 6);
+      // Hair wave/texture
       ctx.fillStyle = '#2a1a10';
-      ctx.fillRect(x+w/2-2, y+2, 4, 8);
+      ctx.fillRect(x+6, y+4, 8, 3);
+      ctx.fillRect(x+w-14, y+6, 8, 3);
+      ctx.fillRect(x+w/2-6, y+2, 12, 2);
+      // Sideburns going down the sides
+      ctx.fillStyle = '#1a1008';
+      ctx.fillRect(x-2, y+30, 8, 30);
+      ctx.fillRect(x+w-6, y+30, 8, 30);
+      // Sideburn taper
+      ctx.fillStyle = '#221510';
+      ctx.fillRect(x, y+50, 5, 12);
+      ctx.fillRect(x+w-5, y+50, 5, 12);
 
-      // === BIG AVIATOR SUNGLASSES ===
-      const glassY = y + 18;
-      const glassH = 26;
-      const lensW = (w-16)/2;
-      // Left lens (big teardrop aviator shape)
+      // Forehead (skin showing between hair and glasses)
+      ctx.fillStyle = '#d4a574';
+      ctx.fillRect(x+6, y+30, w-12, 16);
+
+      // === BIG AVIATOR SUNGLASSES (middle of face) ===
+      const glassY = y + 44;
+      const glassH = 28;
+      const lensW = (w-14)/2;
+      // Left lens
       ctx.fillStyle = '#0a0a0a';
       ctx.fillRect(x+4, glassY, lensW+2, glassH);
       ctx.fillRect(x+2, glassY+4, lensW+6, glassH-8);
       // Right lens
       ctx.fillRect(x+w-6-lensW, glassY, lensW+2, glassH);
       ctx.fillRect(x+w-8-lensW, glassY+4, lensW+6, glassH-8);
-      // Gold/brown frames
+      // Gold frames
       ctx.fillStyle = '#aa7722';
-      ctx.fillRect(x+1, glassY-1, lensW+8, 2);
-      ctx.fillRect(x+w-9-lensW, glassY-1, lensW+8, 2);
-      ctx.fillRect(x+1, glassY+glassH-1, lensW+8, 2);
-      ctx.fillRect(x+w-9-lensW, glassY+glassH-1, lensW+8, 2);
+      ctx.fillRect(x+1, glassY-2, lensW+8, 3);
+      ctx.fillRect(x+w-9-lensW, glassY-2, lensW+8, 3);
+      ctx.fillRect(x+1, glassY+glassH-1, lensW+8, 3);
+      ctx.fillRect(x+w-9-lensW, glassY+glassH-1, lensW+8, 3);
       // Bridge
       ctx.fillStyle = '#aa7722';
       ctx.fillRect(x+6+lensW, glassY+glassH/2-2, w-12-lensW*2, 4);
@@ -1192,38 +1207,36 @@ function drawBuilding(b) {
       ctx.fillStyle = 'rgba(255,255,255,0.15)';
       ctx.fillRect(x+6, glassY+4, 8, 6);
       ctx.fillRect(x+w-4-lensW, glassY+4, 8, 6);
-      // Arms extending to sides (temple arms)
+      // Temple arms extending to sides
       ctx.fillStyle = '#aa7722';
       ctx.fillRect(x-10, glassY+glassH/2-1, 14, 3);
       ctx.fillRect(x+w-4, glassY+glassH/2-1, 14, 3);
 
+      // Nose hint
+      ctx.fillStyle = 'rgba(0,0,0,0.08)';
+      ctx.fillRect(x+w/2-4, glassY+glassH+2, 8, 6);
+
       // === BIG MUSTACHE ===
-      const mustY = glassY + glassH + 4;
+      const mustY = glassY + glassH + 8;
       ctx.fillStyle = '#1a1008';
-      // Thick handlebar mustache
-      ctx.fillRect(x+w/2-20, mustY, 40, 6);
-      ctx.fillRect(x+w/2-24, mustY+2, 48, 4);
-      ctx.fillRect(x+w/2-26, mustY+3, 4, 4); // left curl
-      ctx.fillRect(x+w/2+22, mustY+3, 4, 4); // right curl
-      ctx.fillRect(x+w/2-28, mustY+5, 4, 3); // left curl down
-      ctx.fillRect(x+w/2+24, mustY+5, 4, 3); // right curl down
-      // Mustache detail
+      ctx.fillRect(x+w/2-22, mustY, 44, 7);
+      ctx.fillRect(x+w/2-26, mustY+2, 52, 5);
+      ctx.fillRect(x+w/2-28, mustY+4, 4, 4); // left curl
+      ctx.fillRect(x+w/2+24, mustY+4, 4, 4); // right curl
+      ctx.fillRect(x+w/2-30, mustY+6, 4, 3); // left curl down
+      ctx.fillRect(x+w/2+26, mustY+6, 4, 3); // right curl down
       ctx.fillStyle = '#2a1a10';
-      ctx.fillRect(x+w/2-1, mustY, 2, 6); // center part
+      ctx.fillRect(x+w/2-1, mustY, 2, 7);
 
-      // Nose hint (small shadow above mustache)
-      ctx.fillStyle = 'rgba(0,0,0,0.1)';
-      ctx.fillRect(x+w/2-4, mustY-4, 8, 4);
-
-      // Chin area
-      ctx.fillStyle = '#c89868';
-      ctx.fillRect(x+8, mustY+10, w-16, 12);
-      ctx.fillStyle = '#ba8858';
-      ctx.fillRect(x+12, mustY+16, w-24, 8);
-
-      // Confident smirk under mustache
+      // Mouth/smirk
       ctx.fillStyle = '#b07050';
-      ctx.fillRect(x+w/2-8, mustY+8, 16, 2);
+      ctx.fillRect(x+w/2-8, mustY+10, 16, 2);
+
+      // Chin
+      ctx.fillStyle = '#c89868';
+      ctx.fillRect(x+8, mustY+14, w-16, 14);
+      ctx.fillStyle = '#ba8858';
+      ctx.fillRect(x+12, mustY+22, w-24, 8);
 
       // Open doorway
       const dy4 = doorAtTop ? y-6 : y+h-2;
