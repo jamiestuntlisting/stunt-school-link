@@ -878,15 +878,20 @@ function drawBuilding(b) {
       for (let i = 0; i < 10; i++) ctx.fillRect(x-18+i*7, y+h, 3, 3);
 
       // Open doorway
-      const dy1 = doorAtTop ? y-4 : y+h-12;
+      const dy1 = doorAtTop ? y-6 : y+h-12;
       ctx.fillStyle = '#0a0a1a';
-      ctx.fillRect(x+w/2-8, dy1, 16, 14);
+      ctx.fillRect(x+w/2-8, dy1, 16, 16);
       ctx.fillStyle = '#1a1a2a';
-      ctx.fillRect(x+w/2-6, dy1+2, 12, 10);
+      ctx.fillRect(x+w/2-6, dy1+2, 12, 12);
+      // Door frame - lintel on the building side, open on the path side
       ctx.fillStyle = '#5a7090';
-      ctx.fillRect(x+w/2-9, dy1, 2, 14);
-      ctx.fillRect(x+w/2+7, dy1, 2, 14);
-      ctx.fillRect(x+w/2-9, dy1, 18, 2);
+      ctx.fillRect(x+w/2-9, dy1, 2, 16);
+      ctx.fillRect(x+w/2+7, dy1, 2, 16);
+      if (doorAtTop) {
+        ctx.fillRect(x+w/2-9, dy1+14, 18, 2); // lintel at bottom (building side)
+      } else {
+        ctx.fillRect(x+w/2-9, dy1, 18, 2); // lintel at top (building side)
+      }
       break;
     }
 
@@ -1003,11 +1008,15 @@ function drawBuilding(b) {
       // Firelight glow from inside
       ctx.fillStyle = 'rgba(255,100,0,0.3)';
       ctx.fillRect(x+w/2-6, dy2+2, 12, 12);
-      // Metal frame
+      // Metal frame - lintel on building side
       ctx.fillStyle = '#666';
       ctx.fillRect(x+w/2-9, dy2, 2, 16);
       ctx.fillRect(x+w/2+7, dy2, 2, 16);
-      ctx.fillRect(x+w/2-9, dy2, 18, 2);
+      if (doorAtTop) {
+        ctx.fillRect(x+w/2-9, dy2+14, 18, 2);
+      } else {
+        ctx.fillRect(x+w/2-9, dy2, 18, 2);
+      }
       break;
     }
 
@@ -1129,15 +1138,19 @@ function drawBuilding(b) {
       for (let i=0;i<8;i++) ctx.fillRect(x-2+i*6, y+h-1, 3, 2);
 
       // Open doorway at top of front stairs
-      const dy3 = doorAtTop ? y-4 : y+h-10;
+      const dy3 = doorAtTop ? y-6 : y+h-10;
       ctx.fillStyle = '#0a0a1a';
-      ctx.fillRect(x+w/2-8, dy3, 16, 14);
+      ctx.fillRect(x+w/2-8, dy3, 16, 16);
       ctx.fillStyle = '#1a1a2a';
-      ctx.fillRect(x+w/2-6, dy3+2, 12, 10);
+      ctx.fillRect(x+w/2-6, dy3+2, 12, 12);
       ctx.fillStyle = '#6b5530';
-      ctx.fillRect(x+w/2-9, dy3, 2, 14);
-      ctx.fillRect(x+w/2+7, dy3, 2, 14);
-      ctx.fillRect(x+w/2-9, dy3, 18, 2);
+      ctx.fillRect(x+w/2-9, dy3, 2, 16);
+      ctx.fillRect(x+w/2+7, dy3, 2, 16);
+      if (doorAtTop) {
+        ctx.fillRect(x+w/2-9, dy3+14, 18, 2);
+      } else {
+        ctx.fillRect(x+w/2-9, dy3, 18, 2);
+      }
       break;
     }
 
@@ -1238,16 +1251,29 @@ function drawBuilding(b) {
       ctx.fillStyle = '#ba8858';
       ctx.fillRect(x+12, mustY+22, w-24, 8);
 
-      // Open doorway
-      const dy4 = doorAtTop ? y-6 : y+h-2;
+      // Open doorway - big and obvious
+      const dy4 = doorAtTop ? y-8 : y+h-2;
+      // Dark entrance
       ctx.fillStyle = '#0a0a1a';
-      ctx.fillRect(x+w/2-8, dy4, 16, 14);
+      ctx.fillRect(x+w/2-10, dy4, 20, 18);
       ctx.fillStyle = '#1a1a2a';
-      ctx.fillRect(x+w/2-6, dy4+2, 12, 10);
-      ctx.fillStyle = '#888';
-      ctx.fillRect(x+w/2-9, dy4, 2, 14);
-      ctx.fillRect(x+w/2+7, dy4, 2, 14);
-      ctx.fillRect(x+w/2-9, dy4, 18, 2);
+      ctx.fillRect(x+w/2-8, dy4+2, 16, 14);
+      // Bright frame so it's visible against the face
+      ctx.fillStyle = '#cc4444';
+      ctx.fillRect(x+w/2-11, dy4, 2, 18);
+      ctx.fillRect(x+w/2+9, dy4, 2, 18);
+      if (doorAtTop) {
+        ctx.fillRect(x+w/2-11, dy4+16, 22, 2); // lintel at bottom (building side)
+      } else {
+        ctx.fillRect(x+w/2-11, dy4, 22, 2); // lintel at top (building side)
+      }
+      // Welcome mat / step
+      ctx.fillStyle = '#aa3333';
+      if (doorAtTop) {
+        ctx.fillRect(x+w/2-8, dy4-4, 16, 4);
+      } else {
+        ctx.fillRect(x+w/2-8, dy4+18, 16, 4);
+      }
       break;
     }
   }
