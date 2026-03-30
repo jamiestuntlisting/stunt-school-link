@@ -308,7 +308,8 @@ let joystickTouchId = null;
 function setupTouch() {
   if (!isTouchDevice) return;
   document.getElementById('joystick-area').style.display = 'block';
-  document.getElementById('touch-action-btn').style.display = 'flex';
+  // Action button starts hidden - shown when near NPC or building
+  document.getElementById('touch-action-btn').style.display = 'none';
 
   const jArea = document.getElementById('joystick-area');
   const jCanvas = document.getElementById('joystick-canvas');
@@ -475,7 +476,10 @@ for (let x = 1; x < MAP_W-1; x++) { setTile(x, 14, 1); setTile(x, 15, 1); setTil
 for (let x = 1; x < 7; x++) { setTile(x, 6, 1); setTile(x, 24, 1); }
 for (let x = 10; x < MAP_W-1; x++) { setTile(x, 6, 1); setTile(x, 24, 1); }
 
-// Gate is at the right wall - wall stays solid (player can't pass)
+// Gate: open the wall tiles so the gate itself is the barrier
+map[14][MAP_W-1] = 0;
+map[15][MAP_W-1] = 0;
+map[16][MAP_W-1] = 0;
 
 // Water pond
 setTile(2, 11, 3); setTile(3, 11, 3); setTile(2, 12, 3); setTile(3, 12, 3); setTile(4, 12, 3);
@@ -635,7 +639,7 @@ const npcs = [
   },
   {
     name: 'Gate Guard Gary',
-    x: (MAP_W-3) * TILE, y: 14 * TILE + 8,
+    x: (MAP_W-2) * TILE - 20, y: 15 * TILE - 4,
     w: 24, h: 28,
     type: 'guard',
     rounds: [
@@ -700,20 +704,33 @@ function isBlocked(px, py, pw, ph) {
     }
   }
   for (const b of buildings) {
-    // Check if player is near the door zone FIRST - always allow
     const doorCx = b.doorX * TILE;
     const doorCy = b.doorY * TILE;
     const pcx = px + pw/2;
     const pcy = py + ph/2;
     const inDoorZone = Math.abs(pcx - doorCx) < 20 && Math.abs(pcy - doorCy) < TILE;
-    if (inDoorZone) continue; // near door - never block
+    if (inDoorZone) continue;
 
-    // Building collision rect - extend slightly beyond the building edges
-    // to catch the door approach area
     const bx1 = b.x * TILE, by1 = b.y * TILE;
     const bx2 = (b.x + b.w) * TILE, by2 = (b.y + b.h) * TILE;
     if (px + pw > bx1 && px < bx2 && py + ph > by1 && py < by2) {
       return true;
+    }
+  }
+  // NPC collision - can't walk through characters
+  for (const npc of npcs) {
+    const nx = npc.x, ny = npc.y;
+    const nw = npc.w || 24, nh = npc.h || 28;
+    if (px + pw > nx && px < nx + nw && py + ph > ny && py < ny + nh) {
+      return true;
+    }
+  }
+  // Gate collision
+  for (const d of decorations) {
+    if (d.type === 'gate') {
+      if (px + pw > d.x - 2 && px < d.x + 26 && py + ph > d.y && py < d.y + TILE*4) {
+        return true;
+      }
     }
   }
   return false;
@@ -1755,16 +1772,38 @@ function checkProximity() {
       nearBuilding = b;
       ep.style.display = 'block';
       ep.textContent = b.name;
+      if (isTouchDevice) {
+        const ab = document.getElementById('touch-action-btn');
+        ab.style.display = 'flex';
+        ab.textContent = 'ENTER';
+        ab.style.background = 'rgba(232,193,112,0.4)';
+        ab.style.borderColor = 'rgba(232,193,112,0.7)';
+        ab.style.color = '#e8c170';
+      }
       return;
     }
   }
   ep.style.display = 'none';
   nearBuilding = null;
 
+  // Check NPC proximity
+  const ab = document.getElementById('touch-action-btn');
   for (const npc of npcs) {
     const dist = Math.hypot(player.x+10-(npc.x+12), player.y+12-(npc.y+14));
-    if (dist < 44) { nearNPC = npc; return; }
+    if (dist < 44) {
+      nearNPC = npc;
+      if (isTouchDevice) {
+        ab.style.display = 'flex';
+        ab.textContent = 'TALK';
+        ab.style.background = 'rgba(126,200,227,0.3)';
+        ab.style.borderColor = 'rgba(126,200,227,0.6)';
+        ab.style.color = 'rgba(126,200,227,0.9)';
+      }
+      return;
+    }
   }
+  // Nothing nearby - hide action button
+  if (isTouchDevice) ab.style.display = 'none';
 }
 
 // ---- UPDATE ----
