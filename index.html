@@ -681,7 +681,17 @@ function isBlocked(px, py, pw, ph) {
   for (const b of buildings) {
     const bx1 = b.x * TILE, by1 = b.y * TILE;
     const bx2 = (b.x + b.w) * TILE, by2 = (b.y + b.h) * TILE;
-    if (px + pw > bx1 && px < bx2 && py + ph > by1 && py < by2) return true;
+    if (px + pw > bx1 && px < bx2 && py + ph > by1 && py < by2) {
+      // Allow walking through the open doorway
+      const doorCx = b.doorX * TILE;
+      const doorCy = b.doorY * TILE;
+      const pcx = px + pw/2;
+      const pcy = py + ph/2;
+      if (Math.abs(pcx - doorCx) < 14 && Math.abs(pcy - doorCy) < 20) {
+        continue; // door zone - don't block
+      }
+      return true;
+    }
   }
   return false;
 }
@@ -831,14 +841,17 @@ function drawBuilding(b) {
       ctx.fillStyle = '#ff4444';
       ctx.fillRect(x+w/2-6, y+h-16, 12, 2);
       ctx.fillRect(x+w/2-1, y+h-21, 2, 12);
-      // Door
+      // Open doorway
       const dy1 = doorAtTop ? y-4 : y+h-12;
-      ctx.fillStyle = '#3a2a1a';
-      ctx.fillRect(x+w/2-7, dy1, 14, 14);
-      ctx.fillStyle = '#5a4a3a';
-      ctx.fillRect(x+w/2-5, dy1+2, 10, 10);
-      ctx.fillStyle = '#e8c170';
-      ctx.fillRect(x+w/2+2, dy1+6, 2, 2);
+      ctx.fillStyle = '#0a0a1a';
+      ctx.fillRect(x+w/2-8, dy1, 16, 16);
+      ctx.fillStyle = '#1a1a2a';
+      ctx.fillRect(x+w/2-6, dy1+2, 12, 12);
+      // Door frame
+      ctx.fillStyle = '#6080aa';
+      ctx.fillRect(x+w/2-9, dy1, 2, 16);
+      ctx.fillRect(x+w/2+7, dy1, 2, 16);
+      ctx.fillRect(x+w/2-9, dy1, 18, 2);
       break;
     }
 
@@ -946,16 +959,20 @@ function drawBuilding(b) {
       // Scorch marks on ground
       ctx.fillStyle = 'rgba(30,10,0,0.35)';
       ctx.fillRect(x-10, y+h+6, w+20, 8);
-      // Metal door (fireproof)
+      // Open doorway (glowing from fire inside)
       const dy2 = doorAtTop ? y-4 : y+h-12;
-      ctx.fillStyle = '#555';
-      ctx.fillRect(x+w/2-7, dy2, 14, 14);
-      ctx.fillStyle = '#777';
-      ctx.fillRect(x+w/2-5, dy2+2, 10, 10);
-      ctx.fillStyle = '#ffcc00';
-      ctx.fillRect(x+w/2-3, dy2+3, 6, 6);
-      ctx.fillStyle = '#ff0000';
-      ctx.fillRect(x+w/2-1, dy2+4, 2, 4);
+      ctx.fillStyle = '#1a0800';
+      ctx.fillRect(x+w/2-8, dy2, 16, 16);
+      ctx.fillStyle = '#331100';
+      ctx.fillRect(x+w/2-6, dy2+2, 12, 12);
+      // Firelight glow from inside
+      ctx.fillStyle = 'rgba(255,100,0,0.3)';
+      ctx.fillRect(x+w/2-6, dy2+2, 12, 12);
+      // Metal frame
+      ctx.fillStyle = '#666';
+      ctx.fillRect(x+w/2-9, dy2, 2, 16);
+      ctx.fillRect(x+w/2+7, dy2, 2, 16);
+      ctx.fillRect(x+w/2-9, dy2, 18, 2);
       break;
     }
 
@@ -1076,14 +1093,16 @@ function drawBuilding(b) {
       ctx.fillStyle = '#222';
       for (let i=0;i<8;i++) ctx.fillRect(x-2+i*6, y+h-1, 3, 2);
 
-      // Door at the top of the front stairs
+      // Open doorway at top of front stairs
       const dy3 = doorAtTop ? y-4 : y+h-10;
-      ctx.fillStyle = '#4a3520';
-      ctx.fillRect(x+w/2-7, dy3, 14, 12);
+      ctx.fillStyle = '#0a0a1a';
+      ctx.fillRect(x+w/2-8, dy3, 16, 14);
+      ctx.fillStyle = '#1a1a2a';
+      ctx.fillRect(x+w/2-6, dy3+2, 12, 10);
       ctx.fillStyle = '#6b5530';
-      ctx.fillRect(x+w/2-5, dy3+2, 10, 8);
-      ctx.fillStyle = '#e8c170';
-      ctx.fillRect(x+w/2+2, dy3+5, 2, 2);
+      ctx.fillRect(x+w/2-9, dy3, 2, 14);
+      ctx.fillRect(x+w/2+7, dy3, 2, 14);
+      ctx.fillRect(x+w/2-9, dy3, 18, 2);
       break;
     }
 
@@ -1139,14 +1158,16 @@ function drawBuilding(b) {
       ctx.fillStyle = '#c0d8f0';
       ctx.fillRect(x+6, y+10, 8, 8);
       ctx.fillRect(x+w-14, y+10, 8, 8);
-      // Door
+      // Open doorway
       const dy4 = doorAtTop ? y-6 : y+h-2;
-      ctx.fillStyle = '#4a3520';
-      ctx.fillRect(x+w/2-7, dy4, 14, 12);
-      ctx.fillStyle = '#6b5530';
-      ctx.fillRect(x+w/2-5, dy4+2, 10, 8);
-      ctx.fillStyle = '#e8c170';
-      ctx.fillRect(x+w/2+2, dy4+4, 2, 2);
+      ctx.fillStyle = '#0a0a1a';
+      ctx.fillRect(x+w/2-8, dy4, 16, 14);
+      ctx.fillStyle = '#1a1a2a';
+      ctx.fillRect(x+w/2-6, dy4+2, 12, 10);
+      ctx.fillStyle = '#1a4a16';
+      ctx.fillRect(x+w/2-9, dy4, 2, 14);
+      ctx.fillRect(x+w/2+7, dy4, 2, 14);
+      ctx.fillRect(x+w/2-9, dy4, 18, 2);
       break;
     }
   }
@@ -1564,19 +1585,19 @@ function checkProximity() {
   nearNPC = null;
   const ep = document.getElementById('enter-prompt');
 
-  // Auto-navigate when walking into a building door
+  // Auto-navigate when walking through the open door
   for (const b of buildings) {
     const bx = b.doorX*TILE, by = b.doorY*TILE;
     const dist = Math.hypot(player.x+10-bx, player.y+12-by);
-    if (dist < 20 && player.moving) {
-      // Walk right in!
+    if (dist < 12) {
+      // Walked right in!
       window.location.href = b.url;
       return;
     }
-    if (dist < 40) {
+    if (dist < 48) {
       nearBuilding = b;
       ep.style.display = 'block';
-      ep.textContent = `Walk into ${b.name}`;
+      ep.textContent = b.name;
       return;
     }
   }
