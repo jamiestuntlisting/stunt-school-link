@@ -436,14 +436,14 @@ function getSpawnPos() {
     localStorage.removeItem('stuntschool_lastbuilding');
     // Spawn outside the door of the building they just visited
     const spawns = {
-      'stairfalls': { x: 3 * TILE, y: 5.5 * TILE, dir: 0 },
-      'fireburns':  { x: 8 * TILE, y: 5.5 * TILE, dir: 0 },
-      'highfalls':  { x: 3 * TILE, y: 13.5 * TILE, dir: 3 },
-      'stuntcoord': { x: 8 * TILE, y: 13.5 * TILE, dir: 3 }
+      'stairfalls': { x: 4 * TILE, y: 7 * TILE, dir: 0 },
+      'fireburns':  { x: 12 * TILE, y: 7 * TILE, dir: 0 },
+      'highfalls':  { x: 4 * TILE, y: 22 * TILE, dir: 3 },
+      'stuntcoord': { x: 12 * TILE, y: 22 * TILE, dir: 3 }
     };
     if (spawns[lastBuilding]) return spawns[lastBuilding];
   }
-  return { x: 5.5 * TILE, y: 10.5 * TILE, dir: 0 };
+  return { x: 8 * TILE, y: 15 * TILE, dir: 0 };
 }
 const spawn = getSpawnPos();
 
@@ -455,8 +455,8 @@ const player = {
 };
 
 // ---- MAP ----
-// Map sized for vertical layout: 11 wide x 20 tall
-const MAP_W = 11, MAP_H = 20;
+// 1.5x bigger: 16 wide x 30 tall
+const MAP_W = 16, MAP_H = 30;
 const map = [];
 for (let y = 0; y < MAP_H; y++) {
   map[y] = [];
@@ -468,72 +468,73 @@ for (let y = 0; y < MAP_H; y++) {
 
 function setTile(x, y, t) { if (map[y] && map[y][x] !== undefined) map[y][x] = t; }
 
-// Main cross-shaped path
-for (let y = 1; y < MAP_H-1; y++) { setTile(5, y, 1); setTile(6, y, 1); }
-for (let x = 1; x < MAP_W-1; x++) { setTile(x, 10, 1); setTile(x, 11, 1); }
+// Main cross-shaped paths
+for (let y = 1; y < MAP_H-1; y++) { setTile(7, y, 1); setTile(8, y, 1); setTile(9, y, 1); }
+for (let x = 1; x < MAP_W-1; x++) { setTile(x, 14, 1); setTile(x, 15, 1); setTile(x, 16, 1); }
 // Paths to corners
-for (let x = 1; x < 5; x++) { setTile(x, 4, 1); setTile(x, 16, 1); }
-for (let x = 7; x < 10; x++) { setTile(x, 4, 1); setTile(x, 16, 1); }
+for (let x = 1; x < 7; x++) { setTile(x, 6, 1); setTile(x, 24, 1); }
+for (let x = 10; x < MAP_W-1; x++) { setTile(x, 6, 1); setTile(x, 24, 1); }
 
-// EXIT on the right side - open the wall
-map[10][MAP_W-1] = 1;
-map[11][MAP_W-1] = 1;
+// EXIT gate on the right side - open the wall
+map[14][MAP_W-1] = 1;
+map[15][MAP_W-1] = 1;
+map[16][MAP_W-1] = 1;
 
 // Water pond
-setTile(2, 8, 3); setTile(3, 8, 3); setTile(2, 9, 3); setTile(3, 9, 3);
+setTile(2, 11, 3); setTile(3, 11, 3); setTile(2, 12, 3); setTile(3, 12, 3); setTile(4, 12, 3);
 
-// Flowers
-setTile(8, 8, 4); setTile(9, 9, 4); setTile(1, 12, 4); setTile(2, 13, 4);
-setTile(8, 12, 4); setTile(9, 13, 4); setTile(1, 7, 4);
+// Flowers scattered
+setTile(12, 10, 4); setTile(13, 11, 4); setTile(2, 18, 4); setTile(3, 19, 4);
+setTile(12, 19, 4); setTile(13, 20, 4); setTile(1, 9, 4); setTile(2, 10, 4);
+setTile(11, 8, 4); setTile(14, 12, 4);
 
 // Dark grass
-setTile(8, 6, 5); setTile(9, 7, 5); setTile(1, 14, 5); setTile(2, 14, 5);
+setTile(12, 8, 5); setTile(13, 9, 5); setTile(14, 8, 5);
+setTile(1, 20, 5); setTile(2, 21, 5); setTile(3, 20, 5);
+setTile(11, 20, 5); setTile(12, 21, 5);
 
-// ---- BUILDINGS in corners (SWAPPED: Stair Falls top-left, High Falls bottom-left) ----
+// ---- BUILDINGS in corners ----
 const buildings = [
   {
     name: 'STAIR FALLS',
-    x: 1, y: 1, w: 4, h: 3,
-    doorX: 3, doorY: 4, doorSide: 'bottom',
+    x: 1, y: 1, w: 5, h: 4,
+    doorX: 4, doorY: 6, doorSide: 'bottom',
     url: 'https://pro-stair-faller.vercel.app/',
     color: '#6b5b45', roofColor: '#4a3f30', accent: '#c4a76c',
     special: 'stairs'
   },
   {
     name: 'FIRE BURNS',
-    x: 7, y: 1, w: 3, h: 3,
-    doorX: 8, doorY: 4, doorSide: 'bottom',
+    x: 10, y: 1, w: 4, h: 4,
+    doorX: 12, doorY: 6, doorSide: 'bottom',
     url: 'https://pro-fire-burner.vercel.app/',
     color: '#8b2500', roofColor: '#5c1a00', accent: '#ff6b35',
     special: 'fire'
   },
   {
     name: 'HIGH FALLS',
-    x: 1, y: 15, w: 4, h: 4,
-    doorX: 3, doorY: 15, doorSide: 'top',
+    x: 1, y: 23, w: 5, h: 5,
+    doorX: 4, doorY: 23, doorSide: 'top',
     url: 'https://pro-high-faller.vercel.app/',
     color: '#4a6fa5', roofColor: '#2c4a7c', accent: '#7ec8e3',
     special: 'tower'
   },
   {
     name: 'STUNT COORD',
-    x: 7, y: 15, w: 3, h: 4,
-    doorX: 8, doorY: 15, doorSide: 'top',
+    x: 10, y: 23, w: 5, h: 5,
+    doorX: 12, doorY: 23, doorSide: 'top',
     url: 'https://coordinator-please.vercel.app/',
-    color: '#2d5a27', roofColor: '#1a3d16', accent: '#90c948',
+    color: '#707070', roofColor: '#555', accent: '#cc4444',
     special: 'office'
   }
 ];
-
-// Exit zone check - when player walks off right edge
-const EXIT_URL = null; // set to a URL if you want the exit to go somewhere
 
 // ---- NPCs ----
 // Each NPC has 3 rounds of dialogue that cycle
 const npcs = [
   {
     name: 'Injured Ian',
-    x: 3 * TILE + 8, y: 10 * TILE + 8,
+    x: 5 * TILE + 8, y: 14 * TILE + 8,
     w: 28, h: 16,
     type: 'lying',
     rounds: [
@@ -559,7 +560,7 @@ const npcs = [
   },
   {
     name: 'Old Pete - Veteran Coordinator',
-    x: 7 * TILE + 8, y: 7 * TILE,
+    x: 11 * TILE, y: 10 * TILE,
     w: 24, h: 28,
     type: 'old',
     rounds: [
@@ -585,7 +586,7 @@ const npcs = [
   },
   {
     name: 'Jittery Jeff',
-    x: 2 * TILE, y: 6 * TILE,
+    x: 3 * TILE, y: 9 * TILE,
     w: 24, h: 28,
     type: 'jittery',
     rounds: [
@@ -611,7 +612,7 @@ const npcs = [
   },
   {
     name: 'Tommy Crews',
-    x: 8 * TILE, y: 12 * TILE,
+    x: 12 * TILE, y: 18 * TILE,
     w: 24, h: 28,
     type: 'doug',
     rounds: [
@@ -637,7 +638,7 @@ const npcs = [
   },
   {
     name: 'Gate Guard Gary',
-    x: 5 * TILE, y: 13 * TILE,
+    x: (MAP_W-2) * TILE - 8, y: 14 * TILE + 8,
     w: 24, h: 28,
     type: 'guard',
     rounds: [
@@ -663,7 +664,7 @@ const npcs = [
   },
   {
     name: 'Resume Rachel',
-    x: 2 * TILE, y: 12 * TILE,
+    x: 3 * TILE, y: 18 * TILE,
     w: 24, h: 28,
     type: 'rachel',
     rounds: [
@@ -1548,19 +1549,25 @@ function drawNPC(npc) {
 
 // ---- DECORATIONS ----
 const decorations = [
-  { type: 'dummy', x: 5*TILE+4, y: 7*TILE },
-  { type: 'dummy', x: 6*TILE+4, y: 7*TILE+16 },
-  { type: 'barrel', x: 9*TILE, y: 8*TILE },
-  { type: 'barrel', x: 9*TILE+16, y: 8*TILE },
-  { type: 'cone', x: 1*TILE+8, y: 11*TILE+8 },
-  { type: 'cone', x: 9*TILE+8, y: 13*TILE+8 },
-  { type: 'sign', x: 5*TILE+4, y: 5*TILE+8 },
-  { type: 'mat', x: 4*TILE, y: 9*TILE },
-  { type: 'lamp', x: 5*TILE, y: 5*TILE },
-  { type: 'lamp', x: 6*TILE, y: 5*TILE },
-  { type: 'lamp', x: 5*TILE, y: 14*TILE },
-  { type: 'lamp', x: 6*TILE, y: 14*TILE },
-  { type: 'exit', x: (MAP_W-1)*TILE-4, y: 10*TILE },
+  { type: 'dummy', x: 7*TILE+4, y: 10*TILE },
+  { type: 'dummy', x: 9*TILE+4, y: 10*TILE+16 },
+  { type: 'barrel', x: 13*TILE, y: 12*TILE },
+  { type: 'barrel', x: 13*TILE+16, y: 12*TILE },
+  { type: 'barrel', x: 2*TILE, y: 15*TILE },
+  { type: 'cone', x: 2*TILE+8, y: 17*TILE },
+  { type: 'cone', x: 13*TILE+8, y: 17*TILE },
+  { type: 'cone', x: 6*TILE, y: 21*TILE },
+  // Stunt School sign at center intersection
+  { type: 'sign', x: 8*TILE, y: 13*TILE },
+  { type: 'mat', x: 5*TILE, y: 13*TILE },
+  { type: 'lamp', x: 7*TILE, y: 8*TILE },
+  { type: 'lamp', x: 9*TILE, y: 8*TILE },
+  { type: 'lamp', x: 7*TILE, y: 21*TILE },
+  { type: 'lamp', x: 9*TILE, y: 21*TILE },
+  { type: 'lamp', x: 3*TILE, y: 14*TILE },
+  { type: 'lamp', x: 13*TILE, y: 14*TILE },
+  // Gate at the exit
+  { type: 'gate', x: (MAP_W-2)*TILE, y: 13*TILE },
 ];
 
 function drawDecoration(d) {
@@ -1626,24 +1633,31 @@ function drawDecoration(d) {
       ctx.arc(d.x+8,d.y+5,14+Math.sin(frame*0.05)*2,0,Math.PI*2);
       ctx.fill();
       break;
-    case 'exit':
-      // EXIT sign with arrow pointing right
-      ctx.fillStyle = '#cc2222';
-      ctx.fillRect(d.x-8, d.y, 28, 18);
-      ctx.fillStyle = '#ee4444';
-      ctx.fillRect(d.x-6, d.y+2, 24, 14);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 8px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('EXIT', d.x+6, d.y+11);
-      // Arrow
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(d.x+16, d.y+7, 8, 3);
-      ctx.fillRect(d.x+20, d.y+4, 3, 10);
-      // Glow
-      const ep = Math.sin(frame*0.08)*0.04+0.1;
-      ctx.fillStyle = `rgba(255,50,50,${ep})`;
-      ctx.fillRect(d.x-12, d.y-4, 36, 26);
+    case 'gate':
+      // Iron gate at the exit
+      // Gate posts
+      ctx.fillStyle = '#555';
+      ctx.fillRect(d.x-2, d.y-4, 6, TILE*4+8);
+      ctx.fillRect(d.x+20, d.y-4, 6, TILE*4+8);
+      // Post tops (spheres)
+      ctx.fillStyle = '#777';
+      ctx.fillRect(d.x-3, d.y-8, 8, 5);
+      ctx.fillRect(d.x+19, d.y-8, 8, 5);
+      // Iron bars
+      ctx.fillStyle = '#444';
+      for (let i=0;i<4;i++) {
+        ctx.fillRect(d.x+4+i*5, d.y, 2, TILE*4);
+      }
+      // Horizontal cross bars
+      ctx.fillStyle = '#555';
+      ctx.fillRect(d.x, d.y+10, 24, 3);
+      ctx.fillRect(d.x, d.y+TILE*2, 24, 3);
+      ctx.fillRect(d.x, d.y+TILE*3+6, 24, 3);
+      // Chain and lock
+      ctx.fillStyle = '#aa8833';
+      ctx.fillRect(d.x+8, d.y+TILE*2-2, 8, 6);
+      ctx.fillStyle = '#887722';
+      ctx.fillRect(d.x+10, d.y+TILE*2, 4, 3);
       break;
   }
 }
@@ -1731,7 +1745,7 @@ function update() {
 }
 
 // ---- DRAW ----
-const ZOOM = 2;
+const ZOOM = 1.6;
 function draw() {
   ctx.clearRect(0,0,W,H);
 
