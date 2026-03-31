@@ -34,6 +34,19 @@ export class GameOverScreen {
     const scores = loadHighScores();
     this.placement = scores.findIndex(s => s.totalScore === this.finalScore && s.playerName === this.playerName) + 1;
     if (this.placement === 0) this.placement = scores.length;
+
+    // Report score to parent window (when embedded via iframe)
+    if (window.parent !== window) {
+      const urlParams = new URLSearchParams(window.location.search);
+      window.parent.postMessage({
+        type: 'score',
+        game: 'Pro Fire Burner',
+        score: this.finalScore,
+        userId: urlParams.get('id') || '',
+        firstName: urlParams.get('first_name') || '',
+        lastName: urlParams.get('last_name') || ''
+      }, '*');
+    }
   }
 
   _calculateScore() {

@@ -1,3 +1,9 @@
+// Read URL params for score reporting
+const _urlParams = new URLSearchParams(window.location.search);
+const _stuntUserId = _urlParams.get('id') || '';
+const _stuntFirstName = _urlParams.get('first_name') || '';
+const _stuntLastName = _urlParams.get('last_name') || '';
+
 // ============================================================
 // STARFALL — Phase 1+ Core Loop (Visual Overhaul)
 // ============================================================
@@ -854,6 +860,17 @@ class PlayScene extends Phaser.Scene {
             const failed = this.scoreData && (this.scoreData.crashed || this.scoreData.distFeet > 5.1);
             const passData = { health: this.currentHealth, currency: this.currency, ownedPads: this.ownedPads, protection: this.protection, skinTone: this.skinTone, playerGender: this.playerGender };
             if (this.currentHealth <= 0) {
+                if (window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'score',
+                        game: 'Pro Stair Faller',
+                        score: this.currency,
+                        level: this.currentLevel + 1,
+                        userId: _stuntUserId,
+                        firstName: _stuntFirstName,
+                        lastName: _stuntLastName
+                    }, '*');
+                }
                 this.scene.start('PlayScene', { health: CONFIG.BASE_HEALTH, level: 0, currency: 0, skinTone: this.skinTone, playerGender: this.playerGender });
             } else if (failed) {
                 // Retry same level — increment take number, keep skin tone
