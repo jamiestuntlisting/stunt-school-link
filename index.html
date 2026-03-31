@@ -974,10 +974,12 @@ function isBlocked(px, py, pw, ph) {
     const bx2 = (b.x + b.w) * TILE, by2 = (b.y + b.h) * TILE;
     if (px + pw > bx1 && px < bx2 && py + ph > by1 && py < by2) {
       // Allow walking through ladder zones on the High Falls building
+      // Narrow zone: player center must be within ~6px of ladder center
       if (b.special === 'tower' && typeof climbableLadders !== 'undefined') {
         let onLadder = false;
         for (const lad of climbableLadders) {
-          if (pcx >= lad.worldX - 2 && pcx <= lad.worldX + 18 &&
+          const ladCenter = lad.worldX + 7;
+          if (Math.abs(pcx - ladCenter) <= 8 &&
               pcy >= lad.topY && pcy <= lad.baseY + 30) {
             onLadder = true;
             break;
@@ -2466,7 +2468,8 @@ function getPlayerLadder() {
   const pcx = player.x + player.w/2;
   const pcy = player.y + player.h/2;
   for (const lad of climbableLadders) {
-    if (pcx >= lad.worldX - 2 && pcx <= lad.worldX + 18 &&
+    const ladCenter = lad.worldX + 7;
+    if (Math.abs(pcx - ladCenter) <= 8 &&
         pcy >= lad.topY - 5 && pcy <= lad.baseY + 30) {
       return lad;
     }
@@ -2481,7 +2484,8 @@ function checkLadderFall() {
   const pcy = player.y + player.h/2;
   for (const lad of climbableLadders) {
     // Player is horizontally on the ladder and went above the top
-    if (pcx >= lad.worldX - 2 && pcx <= lad.worldX + 18 &&
+    const ladCenter = lad.worldX + 7;
+    if (Math.abs(pcx - ladCenter) <= 8 &&
         pcy < lad.topY && pcy >= lad.topY - 20) {
       // Walked off the top! Start falling
       ladderFall = {
@@ -2744,6 +2748,13 @@ function update() {
 
   if (dx!==0 && !isBlocked(player.x+dx,player.y,player.w,player.h)) player.x+=dx;
   if (dy!==0 && !isBlocked(player.x,player.y+dy,player.w,player.h)) player.y+=dy;
+
+  // When on a ladder, snap X to ladder center so player looks properly on it
+  const curLadder = getPlayerLadder();
+  if (curLadder && dy !== 0) {
+    const ladCenter = curLadder.worldX + 7;
+    player.x = ladCenter - player.w/2;
+  }
 
   // Check if player walked off the top of a ladder
   checkLadderFall();
