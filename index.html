@@ -450,6 +450,7 @@ let dialogueIndex = 0;
 let nearBuilding = null;
 let nearNPC = null;
 let nearHighScoreSign = false;
+let nearStuntSign = false;
 let highScoreActive = false;
 let hsActiveTab = 0;
 let ladderFall = null; // { x, fallStartY, groundY, phase: 'falling'|'landed', progress }
@@ -495,6 +496,8 @@ function handleAction() {
     }
   } else if (nearNPC) {
     openDialogue(nearNPC);
+  } else if (nearStuntSign) {
+    openDialogue(stuntSignDialogue);
   } else if (nearHighScoreSign) {
     openHighScores();
   }
@@ -2112,6 +2115,28 @@ const decorations = [
   { type: 'gate', x: (MAP_W-1)*TILE - 6, y: 13*TILE },
 ];
 
+// Sign dialogue (reuses NPC dialogue system)
+const stuntSignDialogue = {
+  name: 'Virtual Stunt School',
+  rounds: [
+    [
+      "Welcome to VIRTUAL STUNT SCHOOL!\nThe premier training ground for\naspiring stunt performers!",
+      "Visit our FOUR training buildings\nto master the art of falling,\nburning, tumbling, and timing.",
+      "Check the HIGH SCORES board to\nsee how you stack up against\nfellow stunt trainees!"
+    ],
+    [
+      "SAFETY NOTICE: This school is\nnot responsible for any virtual\ninjuries sustained on campus.",
+      "All stunts are performed by\ntrained pixels. Do not attempt\nat home. Or at work. Or anywhere.",
+      "Side effects may include:\nexcessive fun, sore thumbs,\nand an inflated sense of danger."
+    ],
+    [
+      "FUN FACT: This school was built\nin 1987 by retired stunt legend\n'Bones' McBrokenface.",
+      "He broke every bone twice and\nsaid 'I should teach others\nhow NOT to do that.'",
+      "His motto: 'If you can walk\naway from it, you didn't\ncommit to the stunt.'"
+    ]
+  ]
+};
+
 function drawDecoration(d) {
   switch(d.type) {
     case 'dummy':
@@ -2146,14 +2171,16 @@ function drawDecoration(d) {
       break;
     case 'sign':
       ctx.fillStyle = '#6b5530';
-      ctx.fillRect(d.x+6,d.y+12,4,16);
+      ctx.fillRect(d.x+8,d.y+14,4,16);
       ctx.fillStyle = '#8b7040';
-      ctx.fillRect(d.x-4,d.y+4,24,12);
+      ctx.fillRect(d.x-10,d.y+2,40,14);
+      ctx.strokeStyle = '#5a4420';
+      ctx.strokeRect(d.x-10,d.y+2,40,14);
       ctx.fillStyle = '#f0e6d0';
-      ctx.font = '7px monospace';
+      ctx.font = '6px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('STUNT', d.x+8, d.y+11);
-      ctx.fillText('SCHOOL', d.x+8, d.y+17);
+      ctx.fillText('VIRTUAL', d.x+10, d.y+9);
+      ctx.fillText('STUNT SCHOOL', d.x+10, d.y+14);
       break;
     case 'highscore':
       // Wooden post
@@ -2650,6 +2677,24 @@ function checkProximity() {
         ab.style.color = 'rgba(126,200,227,0.9)';
       }
       return;
+    }
+  }
+  // Check stunt school sign proximity
+  nearStuntSign = false;
+  for (const d of decorations) {
+    if (d.type === 'sign') {
+      const dist = Math.hypot(player.x+10-(d.x+8), player.y+12-(d.y+12));
+      if (dist < 44) {
+        nearStuntSign = true;
+        if (isTouchDevice) {
+          ab.style.display = 'flex';
+          ab.textContent = 'READ';
+          ab.style.background = 'rgba(240,230,208,0.3)';
+          ab.style.borderColor = 'rgba(240,230,208,0.6)';
+          ab.style.color = 'rgba(240,230,208,0.9)';
+        }
+        return;
+      }
     }
   }
   // Check high score sign proximity
