@@ -988,11 +988,15 @@ function isBlocked(px, py, pw, ph) {
             continue;
           }
         } else {
-          // Allow entry from the roof area only
+          // Allow entry from the base (bottom) of the building only
           for (const lad of climbableLadders) {
             const ladCenter = lad.worldX + 7;
-            if (Math.abs(pcx - ladCenter) <= 8 && pcy >= by1 - 30 && pcy <= by1 + 40) {
-              continue outerBuildingLoop;
+            if (Math.abs(pcx - ladCenter) <= 8) {
+              // Near the bottom of the building
+              const nearBottom = pcy >= by2 - 40 && pcy <= by2 + 30;
+              if (nearBottom) {
+                continue outerBuildingLoop;
+              }
             }
           }
         }
@@ -2835,13 +2839,13 @@ function update() {
   } else {
     if (dx!==0 && !isBlocked(player.x+dx,player.y,player.w,player.h)) player.x+=dx;
     if (dy!==0 && !isBlocked(player.x,player.y+dy,player.w,player.h)) player.y+=dy;
-    // Check if player walked down onto a ladder from above the building roof
-    if (dy > 0) { // moving downward
+    // Check if player walked onto a ladder from the base (bottom) only
+    if (dy !== 0) {
       const lad = getPlayerLadder();
       if (lad) {
         const pcy = player.y + player.h/2;
-        // Only lock on if player is near the top of the building (entering from above)
-        if (pcy >= hfY - 30 && pcy <= hfY + 40) {
+        const nearBottom = pcy >= hfY + hfH - 40 && pcy <= hfY + hfH + 30;
+        if (nearBottom) {
           onLadderLocked = lad;
           player.x = lad.worldX + 7 - player.w/2; // snap to ladder
         }
