@@ -1076,11 +1076,9 @@ function isBlocked(px, py, pw, ph) {
       // 2) Entering from above the roof (pcy near building top) and centered on a ladder
       if (b.special === 'tower' && typeof climbableLadders !== 'undefined') {
         if (onLadderLocked) {
-          const ladCenter = onLadderLocked.worldX + 7;
-          if (Math.abs(pcx - ladCenter) <= 8 &&
-              pcy >= onLadderLocked.topY - 20 && pcy <= onLadderLocked.baseY + 40) {
-            continue;
-          }
+          // When locked on a ladder, allow full passage through the building
+          // Player is snapped to ladder center so no risk of exploiting this
+          continue;
         } else {
           // Allow entry from the base (bottom) of the building only
           for (const lad of climbableLadders) {
@@ -2931,7 +2929,7 @@ function update() {
       onLadderLocked = null;
     }
     // Check if player walked below the ladder base — exit ladder at bottom
-    if (pcy > onLadderLocked?.baseY + 30) {
+    if (onLadderLocked && pcy > onLadderLocked.baseY) {
       onLadderLocked = null;
     }
   } else {
