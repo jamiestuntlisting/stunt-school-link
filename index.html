@@ -3100,9 +3100,24 @@ window.addEventListener('message', function(e) {
 });
 
 let gameLoopId = null;
-function gameLoop() {
-  frame++;
-  update();
+let lastFrameTime = 0;
+const TARGET_FRAME_MS = 1000 / 60; // cap at 60fps
+let frameAccumulator = 0;
+
+function gameLoop(timestamp) {
+  if (!lastFrameTime) lastFrameTime = timestamp;
+  const elapsed = timestamp - lastFrameTime;
+  lastFrameTime = timestamp;
+  frameAccumulator += elapsed;
+
+  // Only update at ~60fps, even on 120Hz+ displays
+  if (frameAccumulator >= TARGET_FRAME_MS) {
+    frame++;
+    update();
+    frameAccumulator -= TARGET_FRAME_MS;
+    // Prevent spiral of death if tab was backgrounded
+    if (frameAccumulator > TARGET_FRAME_MS * 4) frameAccumulator = 0;
+  }
   draw();
   gameLoopId = requestAnimationFrame(gameLoop);
 }
