@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "stunt-links",
+      "runtimeExecutable": "/opt/homebrew/bin/npx",
+      "env": {"PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"},
+      "runtimeArgs": ["http-server", "/Users/jamesnorthrup/Library/Mobile Documents/com~apple~CloudDocs/Developer/Stunt Links", "-p", "3456", "-c-1"],
+      "port": 3456
+    }
+  ]
+}

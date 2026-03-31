@@ -62,6 +62,53 @@ canvas {
 }
 #dialogue-box .dialogue-text { color: #f0e6d0; white-space: pre-line; }
 #dialogue-box .prompt { color: #888; font-size: 11px; margin-top: 6px; }
+#highscore-box {
+  display: none;
+  background: rgba(0,0,20,0.96);
+  border: 3px solid #ffd700;
+  border-radius: 8px;
+  padding: 12px 10px 10px;
+  color: #f0e6d0;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: left;
+  box-shadow: 0 0 24px rgba(255,215,0,0.3);
+  max-height: 75%;
+  overflow-y: auto;
+}
+#highscore-box .hs-title {
+  color: #ffd700; font-weight: bold; font-size: 15px; text-align: center; margin-bottom: 6px;
+}
+.hs-tabs {
+  display: flex; gap: 2px; margin-bottom: 8px; flex-wrap: wrap; justify-content: center;
+}
+.hs-tab {
+  background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 4px 4px 0 0; padding: 4px 6px; color: #888;
+  font-size: 9px; font-family: monospace; cursor: pointer; text-align: center;
+  flex: 1; min-width: 0; white-space: nowrap;
+}
+.hs-tab.active {
+  background: rgba(255,215,0,0.25); border-color: #ffd700;
+  color: #ffd700; font-weight: bold;
+}
+.hs-tab-panel { display: none; }
+.hs-tab-panel.active { display: block; }
+#highscore-box .hs-game-header {
+  color: #e8c170; font-weight: bold; font-size: 13px; margin-bottom: 4px; text-align: center;
+}
+#highscore-box .hs-scores { color: #ccc; font-size: 11px; }
+#highscore-box .hs-scores .hs-row { display: flex; justify-content: space-between; padding: 2px 4px; }
+#highscore-box .hs-scores .hs-row:nth-child(odd) { background: rgba(255,255,255,0.03); }
+#highscore-box .hs-scores .hs-rank { color: #888; width: 22px; }
+#highscore-box .hs-scores .hs-name { flex: 1; }
+#highscore-box .hs-scores .hs-val { color: #ffd700; text-align: right; min-width: 50px; }
+#highscore-box .hs-scores .hs-row:first-child .hs-name { color: #ffd700; }
+#highscore-box .hs-scores .hs-row:nth-child(2) .hs-name { color: #c0c0c0; }
+#highscore-box .hs-scores .hs-row:nth-child(3) .hs-name { color: #cd7f32; }
+#highscore-box .hs-empty { color: #666; font-style: italic; font-size: 11px; text-align: center; padding: 8px 0; }
+#highscore-box .hs-prompt { color: #888; font-size: 11px; margin-top: 8px; text-align: center; }
+#highscore-box .hs-nav-hint { color: #666; font-size: 10px; text-align: center; margin-top: 2px; }
 #enter-prompt {
   display: none;
   background: rgba(0,0,20,0.88);
@@ -149,6 +196,13 @@ canvas {
       <div class="prompt" id="dialogue-prompt"></div>
     </div>
     <div id="enter-prompt"></div>
+    <div id="highscore-box">
+      <div class="hs-title">HIGH SCORES</div>
+      <div class="hs-tabs" id="hs-tabs"></div>
+      <div id="hs-panels"></div>
+      <div class="hs-nav-hint" id="hs-nav-hint"></div>
+      <div class="hs-prompt" id="hs-prompt"></div>
+    </div>
   </div>
   <button id="music-btn" style="display:none;">Music: ON</button>
   <div id="joystick-area"><canvas id="joystick-canvas" width="120" height="120"></canvas></div>
@@ -273,12 +327,27 @@ let currentDialogue = null;
 let dialogueIndex = 0;
 let nearBuilding = null;
 let nearNPC = null;
+let nearHighScoreSign = false;
+let highScoreActive = false;
+let hsActiveTab = 0;
 let frame = 0;
 const npcTalkCount = {}; // tracks which round each NPC is on
 
 const keys = {};
 window.addEventListener('keydown', e => {
   keys[e.key] = true;
+  if (highScoreActive) {
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+      e.preventDefault();
+      switchHSTab((hsActiveTab - 1 + 5) % 5);
+      return;
+    }
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+      e.preventDefault();
+      switchHSTab((hsActiveTab + 1) % 5);
+      return;
+    }
+  }
   if (e.key === ' ' || e.key === 'e' || e.key === 'E') {
     e.preventDefault();
     handleAction();
@@ -287,6 +356,10 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => keys[e.key] = false);
 
 function handleAction() {
+  if (highScoreActive) {
+    closeHighScores();
+    return;
+  }
   if (dialogueActive) {
     dialogueIndex++;
     const round = npcTalkCount[currentDialogue.name] || 0;
@@ -298,6 +371,8 @@ function handleAction() {
     }
   } else if (nearNPC) {
     openDialogue(nearNPC);
+  } else if (nearHighScoreSign) {
+    openHighScores();
   }
 }
 
@@ -1875,6 +1950,8 @@ const decorations = [
   { type: 'cone', x: 6*TILE, y: 21*TILE },
   // Stunt School sign at center intersection
   { type: 'sign', x: 8*TILE, y: 13*TILE },
+  // High Scores sign just south of center
+  { type: 'highscore', x: 8*TILE, y: 17*TILE },
   { type: 'mat', x: 5*TILE, y: 13*TILE },
   { type: 'lamp', x: 7*TILE, y: 8*TILE },
   { type: 'lamp', x: 9*TILE, y: 8*TILE },
@@ -1929,6 +2006,37 @@ function drawDecoration(d) {
       ctx.fillText('STUNT', d.x+8, d.y+11);
       ctx.fillText('SCHOOL', d.x+8, d.y+17);
       break;
+    case 'highscore':
+      // Wooden post
+      ctx.fillStyle = '#6b5530';
+      ctx.fillRect(d.x+6, d.y+14, 4, 14);
+      // Sign board - wider for "HIGH SCORES"
+      ctx.fillStyle = '#2a1a0a';
+      ctx.fillRect(d.x-8, d.y+2, 32, 14);
+      // Gold border
+      ctx.strokeStyle = '#ffd700';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(d.x-8, d.y+2, 32, 14);
+      // Trophy icon
+      ctx.fillStyle = '#ffd700';
+      ctx.fillRect(d.x-4, d.y+5, 3, 4);
+      ctx.fillRect(d.x-5, d.y+5, 5, 2);
+      ctx.fillRect(d.x-3, d.y+9, 1, 2);
+      // Text
+      ctx.fillStyle = '#ffd700';
+      ctx.font = '6px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('HIGH', d.x+8, d.y+8);
+      ctx.fillText('SCORES', d.x+8, d.y+14);
+      // Sparkle animation
+      if (Math.sin(frame*0.08) > 0.5) {
+        ctx.fillStyle = '#ffd700';
+        ctx.fillRect(d.x+20, d.y+4, 2, 2);
+      }
+      if (Math.sin(frame*0.08+2) > 0.5) {
+        ctx.fillRect(d.x-6, d.y+12, 2, 2);
+      }
+      break;
     case 'mat':
       ctx.fillStyle = '#4466aa';
       ctx.fillRect(d.x,d.y,TILE*2,TILE);
@@ -1977,6 +2085,162 @@ function drawDecoration(d) {
       break;
   }
 }
+
+// ---- HIGH SCORES ----
+const HS_API = 'https://stunt-scores.vercel.app/api/scores';
+
+const highScoreGames = [
+  { key: 'stairfalls', name: 'STAIR FALLS', weight: 1.0 },
+  { key: 'fireburns', name: 'FIRE BURNS', weight: 1.2 },
+  { key: 'highfalls', name: 'HIGH FALLS', weight: 1.5 },
+  { key: 'stuntcoord', name: 'STUNT COORD', weight: 0.8 }
+];
+
+const hsTabs = [
+  ...highScoreGames.map(g => ({ key: g.key, label: g.name })),
+  { key: 'overall', label: 'OVERALL' }
+];
+
+let hsCache = {}; // { gameKey: [{name, score}] }
+let hsFetching = false;
+
+async function fetchAllScores() {
+  // Try API first, fall back to localStorage
+  try {
+    const res = await fetch(HS_API);
+    if (res.ok) {
+      const data = await res.json();
+      // API returns { stairfalls: [...], fireburns: [...], ... }
+      for (const g of highScoreGames) {
+        hsCache[g.key] = (data[g.key] || []).sort((a,b) => b.score - a.score).slice(0, 10);
+      }
+      return;
+    }
+  } catch(e) {}
+  // Fallback: localStorage
+  for (const g of highScoreGames) {
+    try {
+      const d = localStorage.getItem(g.key + '_highscores');
+      hsCache[g.key] = d ? JSON.parse(d).sort((a,b) => b.score - a.score).slice(0, 10) : [];
+    } catch(e) { hsCache[g.key] = []; }
+  }
+}
+
+function computeOverallScores() {
+  // Weighted average: for each player, combine their best score from each game
+  // Score = sum(game_score * weight) / sum(weights_for_games_played)
+  const playerScores = {}; // { name: { total: 0, weightSum: 0, gamesPlayed: 0 } }
+  for (const g of highScoreGames) {
+    const scores = hsCache[g.key] || [];
+    for (const s of scores) {
+      const n = s.name || 'Anonymous';
+      if (!playerScores[n]) playerScores[n] = { total: 0, weightSum: 0, gamesPlayed: 0 };
+      // Only count best score per game per player
+      if (!playerScores[n]['_' + g.key]) {
+        playerScores[n].total += s.score * g.weight;
+        playerScores[n].weightSum += g.weight;
+        playerScores[n].gamesPlayed++;
+        playerScores[n]['_' + g.key] = true;
+      }
+    }
+  }
+  return Object.entries(playerScores)
+    .map(([name, d]) => ({
+      name,
+      score: Math.round(d.total / d.weightSum),
+      games: d.gamesPlayed
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
+}
+
+function renderHSPanel(tabIdx) {
+  const panels = document.getElementById('hs-panels');
+  const tab = hsTabs[tabIdx];
+  let scores, isOverall = tab.key === 'overall';
+  if (isOverall) {
+    scores = computeOverallScores();
+  } else {
+    scores = (hsCache[tab.key] || []).slice(0, 10);
+  }
+  let html = '<div class="hs-game-header">' + tab.label + '</div>';
+  if (scores.length === 0) {
+    html += '<div class="hs-empty">No scores yet - go play!</div>';
+  } else {
+    html += '<div class="hs-scores">';
+    for (let i = 0; i < scores.length; i++) {
+      const s = scores[i];
+      const name = s.name || 'Anonymous';
+      const val = s.score != null ? s.score.toLocaleString() : '---';
+      const extra = isOverall && s.games ? ' <span style="color:#666;font-size:10px">(' + s.games + '/4)</span>' : '';
+      html += '<div class="hs-row"><span class="hs-rank">' + (i+1) + '.</span><span class="hs-name">' + name + extra + '</span><span class="hs-val">' + val + '</span></div>';
+    }
+    html += '</div>';
+  }
+  if (isOverall) {
+    html += '<div style="color:#555;font-size:9px;text-align:center;margin-top:6px;">Weighted avg across games played</div>';
+  }
+  panels.innerHTML = html;
+}
+
+function switchHSTab(idx) {
+  hsActiveTab = idx;
+  const tabs = document.querySelectorAll('.hs-tab');
+  tabs.forEach((t, i) => t.classList.toggle('active', i === idx));
+  renderHSPanel(idx);
+}
+
+async function openHighScores() {
+  highScoreActive = true;
+  hsActiveTab = 0;
+  const box = document.getElementById('highscore-box');
+
+  // Build tabs
+  const tabsEl = document.getElementById('hs-tabs');
+  tabsEl.innerHTML = hsTabs.map((t, i) =>
+    '<div class="hs-tab' + (i === 0 ? ' active' : '') + '" data-idx="' + i + '">' + t.label + '</div>'
+  ).join('');
+  tabsEl.querySelectorAll('.hs-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchHSTab(parseInt(tab.dataset.idx)));
+  });
+
+  document.getElementById('hs-panels').innerHTML = '<div class="hs-empty">Loading...</div>';
+  document.getElementById('hs-nav-hint').textContent =
+    isTouchDevice ? 'Tap tabs to switch' : 'Arrow keys to switch tabs';
+  document.getElementById('hs-prompt').textContent =
+    isTouchDevice ? 'Tap outside to close' : 'Press SPACE to close';
+  box.style.display = 'block';
+
+  // Fetch scores then render
+  await fetchAllScores();
+  renderHSPanel(hsActiveTab);
+}
+
+function closeHighScores() {
+  highScoreActive = false;
+  document.getElementById('highscore-box').style.display = 'none';
+}
+
+// Seed demo scores for local fallback (remove once API is live)
+(function seedDemoScores() {
+  const demos = {
+    'stairfalls_highscores': [
+      {name:'Tumble Tom', score:9800}, {name:'Roll Rick', score:7200}, {name:'Slip Sam', score:5400}
+    ],
+    'fireburns_highscores': [
+      {name:'Blaze Betty', score:12100}, {name:'Char Charlie', score:8900}, {name:'Singe Sue', score:6300}
+    ],
+    'highfalls_highscores': [
+      {name:'Drop Dave', score:15000}, {name:'Plunge Pat', score:11200}, {name:'Dive Diana', score:7800}
+    ],
+    'stuntcoord_highscores': [
+      {name:'Action Amy', score:20000}, {name:'Take Two Tim', score:14500}, {name:'Cut Carl', score:9900}
+    ]
+  };
+  for (const [key, scores] of Object.entries(demos)) {
+    if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(scores));
+  }
+})();
 
 // ---- PROXIMITY ----
 function checkProximity() {
@@ -2045,13 +2309,32 @@ function checkProximity() {
       return;
     }
   }
+  // Check high score sign proximity
+  nearHighScoreSign = false;
+  for (const d of decorations) {
+    if (d.type === 'highscore') {
+      const dist = Math.hypot(player.x+10-(d.x+8), player.y+12-(d.y+12));
+      if (dist < 44) {
+        nearHighScoreSign = true;
+        if (isTouchDevice) {
+          ab.style.display = 'flex';
+          ab.textContent = 'READ';
+          ab.style.background = 'rgba(255,215,0,0.3)';
+          ab.style.borderColor = 'rgba(255,215,0,0.6)';
+          ab.style.color = 'rgba(255,215,0,0.9)';
+        }
+        return;
+      }
+    }
+  }
+
   // Nothing nearby - hide action button
   if (isTouchDevice) ab.style.display = 'none';
 }
 
 // ---- UPDATE ----
 function update() {
-  if (!gameStarted || dialogueActive) return;
+  if (!gameStarted || dialogueActive || highScoreActive) return;
   // Walk-into-building animation: walk in, fade, navigate immediately once inside
   if (enteringBuilding && enterBuildingAnim) {
     enterBuildingAnim.timer++;
