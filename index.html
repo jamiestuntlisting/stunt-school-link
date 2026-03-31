@@ -2171,18 +2171,20 @@ async function fetchAllScores() {
 }
 
 function computeOverallScores() {
-  // Weighted average: for each player, combine their best score from each game
-  // Score = sum(game_score * weight) / sum(weights_for_games_played)
-  const playerScores = {}; // { name: { total: 0, weightSum: 0, gamesPlayed: 0 } }
+  // Placement-based scoring: 1st place = 10pts, 2nd = 9pts, ... 10th = 1pt
+  // Each game's placement points are multiplied by the game's weight
+  // Final score = total weighted placement points
+  const playerScores = {}; // { name: { total: 0, gamesPlayed: 0 } }
   for (const g of highScoreGames) {
-    const scores = hsCache[g.key] || [];
-    for (const s of scores) {
-      const n = s.name || 'Anonymous';
-      if (!playerScores[n]) playerScores[n] = { total: 0, weightSum: 0, gamesPlayed: 0 };
-      // Only count best score per game per player
+    const scores = (hsCache[g.key] || []).sort((a,b) => b.score - a.score);
+    // Only top 10 get placement points
+    const ranked = scores.slice(0, 10);
+    for (let i = 0; i < ranked.length; i++) {
+      const n = ranked[i].name || 'Anonymous';
+      if (!playerScores[n]) playerScores[n] = { total: 0, gamesPlayed: 0 };
       if (!playerScores[n]['_' + g.key]) {
-        playerScores[n].total += s.score * g.weight;
-        playerScores[n].weightSum += g.weight;
+        const placementPts = 10 - i; // 1st=10, 2nd=9, ..., 10th=1
+        playerScores[n].total += placementPts * g.weight;
         playerScores[n].gamesPlayed++;
         playerScores[n]['_' + g.key] = true;
       }
@@ -2191,10 +2193,10 @@ function computeOverallScores() {
   return Object.entries(playerScores)
     .map(([name, d]) => ({
       name,
-      score: Math.round(d.total / d.weightSum),
+      score: Math.round(d.total * 10) / 10, // one decimal for weighted points
       games: d.gamesPlayed
     }))
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => b.score - a.score || b.games - a.games);
 }
 
 // Player name for highlighting (set by games or default)
@@ -2218,7 +2220,7 @@ function renderHSPanel(tabIdx) {
     for (let i = 0; i < top10.length; i++) {
       const s = top10[i];
       const name = s.name || 'Anonymous';
-      const val = s.score != null ? s.score.toLocaleString() : '---';
+      const val = s.score != null ? (isOverall ? s.score + ' pts' : s.score.toLocaleString()) : '---';
       const isYou = playerName && name.toLowerCase() === playerName.toLowerCase();
       const youClass = isYou ? ' hs-you' : '';
       const youTag = isYou ? ' <span style="color:#7ec8e3;font-size:10px;">(YOU)</span>' : '';
@@ -2235,16 +2237,13 @@ function renderHSPanel(tabIdx) {
       if (idx >= 0) {
         const s = allScores[idx];
         html += '<div class="hs-scores" style="margin-top:6px;border-top:1px solid rgba(126,200,227,0.2);padding-top:6px;">';
-        html += '<div class="hs-row hs-you"><span class="hs-rank">' + (idx+1) + '.</span><span class="hs-name">' + s.name + ' <span style="color:#7ec8e3;font-size:10px;">(YOU)</span></span><span class="hs-val">' + s.score.toLocaleString() + '</span></div>';
+        const youVal = isOverall ? s.score + ' pts' : s.score.toLocaleString();
+        html += '<div class="hs-row hs-you"><span class="hs-rank">' + (idx+1) + '.</span><span class="hs-name">' + s.name + ' <span style="color:#7ec8e3;font-size:10px;">(YOU)</span></span><span class="hs-val">' + youVal + '</span></div>';
         html += '</div>';
       }
     }
   }
-  if (isOverall) {
-    document.getElementById('hs-footer').textContent = 'Weighted average across games played';
-  } else {
-    document.getElementById('hs-footer').textContent = '';
-  }
+  document.getElementById('hs-footer').textContent = '';
   panels.innerHTML = html;
 }
 
@@ -2298,27 +2297,28 @@ function closeHighScores() {
   if (!localStorage.getItem('stuntschool_playername')) {
     localStorage.setItem('stuntschool_playername', 'Stunt Rookie');
   }
+  // Players appearing in multiple games: Danger Dan, Fearless Fiona, Reckless Rex, Stunt Rookie
   const demos = {
     'stairfalls_highscores': [
-      {name:'Tumble Tom', score:9800}, {name:'Roll Rick', score:7200}, {name:'Slip Sam', score:5400},
-      {name:'Fall Fred', score:4800}, {name:'Trip Tracy', score:4200}, {name:'Stunt Rookie', score:3900},
+      {name:'Danger Dan', score:9800}, {name:'Roll Rick', score:7200}, {name:'Fearless Fiona', score:6400},
+      {name:'Reckless Rex', score:5800}, {name:'Trip Tracy', score:4200}, {name:'Stunt Rookie', score:3900},
       {name:'Crash Ken', score:3100}, {name:'Bump Bob', score:2600}, {name:'Wobble Will', score:1800},
       {name:'Stumble Steve', score:1200}
     ],
     'fireburns_highscores': [
-      {name:'Blaze Betty', score:12100}, {name:'Char Charlie', score:8900}, {name:'Singe Sue', score:6300},
-      {name:'Flame Frank', score:5700}, {name:'Ember Ed', score:5100}, {name:'Spark Sally', score:4400},
+      {name:'Fearless Fiona', score:12100}, {name:'Danger Dan', score:8900}, {name:'Singe Sue', score:6300},
+      {name:'Reckless Rex', score:5700}, {name:'Ember Ed', score:5100}, {name:'Spark Sally', score:4400},
       {name:'Stunt Rookie', score:3800}, {name:'Ash Andy', score:3200}, {name:'Smoke Stan', score:2500},
       {name:'Burn Bill', score:1900}
     ],
     'highfalls_highscores': [
-      {name:'Drop Dave', score:15000}, {name:'Plunge Pat', score:11200}, {name:'Dive Diana', score:7800},
-      {name:'Leap Larry', score:6900}, {name:'Jump Jane', score:6100}, {name:'Vault Vince', score:5300},
+      {name:'Reckless Rex', score:15000}, {name:'Danger Dan', score:11200}, {name:'Dive Diana', score:7800},
+      {name:'Fearless Fiona', score:6900}, {name:'Jump Jane', score:6100}, {name:'Vault Vince', score:5300},
       {name:'Stunt Rookie', score:4700}, {name:'Soar Sarah', score:4000}, {name:'Glide Greg', score:3200},
       {name:'Float Fran', score:2400}
     ],
     'stuntcoord_highscores': [
-      {name:'Action Amy', score:20000}, {name:'Take Two Tim', score:14500}, {name:'Cut Carl', score:9900},
+      {name:'Fearless Fiona', score:20000}, {name:'Reckless Rex', score:14500}, {name:'Danger Dan', score:9900},
       {name:'Scene Sam', score:8800}, {name:'Stunt Rookie', score:7600}, {name:'Wrap Wendy', score:6500},
       {name:'Slate Steve', score:5800}, {name:'Boom Brad', score:4900}, {name:'Roll Rita', score:3700},
       {name:'Marker Mike', score:2800}
