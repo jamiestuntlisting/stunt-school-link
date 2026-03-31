@@ -453,6 +453,7 @@ let nearHighScoreSign = false;
 let highScoreActive = false;
 let hsActiveTab = 0;
 let ladderFall = null; // { x, fallStartY, groundY, phase: 'falling'|'landed', progress }
+let onLadderLocked = null; // reference to the ladder the player is locked onto, or null
 let frame = 0;
 const npcTalkCount = {}; // tracks which round each NPC is on
 
@@ -962,7 +963,7 @@ function isBlocked(px, py, pw, ph) {
       if (map[ty][tx] === 2 || map[ty][tx] === 3) return true;
     }
   }
-  for (const b of buildings) {
+  outerBuildingLoop: for (const b of buildings) {
     const doorCx = b.doorX * TILE;
     const doorCy = b.doorY * TILE;
     const pcx = px + pw/2;
@@ -973,19 +974,25 @@ function isBlocked(px, py, pw, ph) {
     const bx1 = b.x * TILE, by1 = b.y * TILE;
     const bx2 = (b.x + b.w) * TILE, by2 = (b.y + b.h) * TILE;
     if (px + pw > bx1 && px < bx2 && py + ph > by1 && py < by2) {
-      // Allow walking through ladder zones on the High Falls building
-      // Narrow zone: player center must be within ~6px of ladder center
+      // Allow walking through ladder zones if:
+      // 1) Already locked onto a ladder, OR
+      // 2) Entering from above the roof (pcy near building top) and centered on a ladder
       if (b.special === 'tower' && typeof climbableLadders !== 'undefined') {
-        let onLadder = false;
-        for (const lad of climbableLadders) {
-          const ladCenter = lad.worldX + 7;
+        if (onLadderLocked) {
+          const ladCenter = onLadderLocked.worldX + 7;
           if (Math.abs(pcx - ladCenter) <= 8 &&
-              pcy >= lad.topY && pcy <= lad.baseY + 30) {
-            onLadder = true;
-            break;
+              pcy >= onLadderLocked.topY && pcy <= onLadderLocked.baseY + 30) {
+            continue;
+          }
+        } else {
+          // Allow entry from the roof area only
+          for (const lad of climbableLadders) {
+            const ladCenter = lad.worldX + 7;
+            if (Math.abs(pcx - ladCenter) <= 8 && pcy >= by1 - 30 && pcy <= by1 + 40) {
+              continue outerBuildingLoop;
+            }
           }
         }
-        if (onLadder) continue;
       }
       return true;
     }
@@ -2749,18 +2756,53 @@ function update() {
   const mag = Math.sqrt(dx*dx+dy*dy);
   if (mag > player.speed) { dx = dx/mag*player.speed; dy = dy/mag*player.speed; }
 
-  if (dx!==0 && !isBlocked(player.x+dx,player.y,player.w,player.h)) player.x+=dx;
-  if (dy!==0 && !isBlocked(player.x,player.y+dy,player.w,player.h)) player.y+=dy;
-
-  // When on a ladder, snap X to ladder center so player looks properly on it
-  const curLadder = getPlayerLadder();
-  if (curLadder && dy !== 0) {
-    const ladCenter = curLadder.worldX + 7;
+  // When locked onto a ladder: only allow up/down movement, no horizontal
+  if (onLadderLocked) {
+    dx = 0; // lock horizontal movement
+    if (dy!==0 && !isBlocked(player.x,player.y+dy,player.w,player.h)) player.y+=dy;
+    // Keep player snapped to ladder center
+    const ladCenter = onLadderLocked.worldX + 7;
     player.x = ladCenter - player.w/2;
+    // Check if player walked above the ladder top — fall off
+    const pcy = player.y + player.h/2;
+    if (pcy < onLadderLocked.topY) {
+      // Walked off the top — trigger fall
+      ladderFall = {
+        x: player.x,
+        fallStartY: player.y,
+        groundY: hfY - 22,
+        phase: 'falling',
+        progress: 0
+      };
+      onLadderLocked = null;
+      if (!audioCtx) initAudio();
+      if (audioCtx) {
+        playNote(500, 0, 0.15, 'sine', 0.06);
+        playNote(400, 0.1, 0.15, 'sine', 0.06);
+        playNote(300, 0.2, 0.2, 'sine', 0.07);
+        playNote(200, 0.35, 0.2, 'sine', 0.06);
+      }
+    }
+    // Check if player walked back above the building roof — exit ladder
+    if (pcy < hfY && !ladderFall) {
+      onLadderLocked = null;
+    }
+  } else {
+    if (dx!==0 && !isBlocked(player.x+dx,player.y,player.w,player.h)) player.x+=dx;
+    if (dy!==0 && !isBlocked(player.x,player.y+dy,player.w,player.h)) player.y+=dy;
+    // Check if player walked down onto a ladder from above the building roof
+    if (dy > 0) { // moving downward
+      const lad = getPlayerLadder();
+      if (lad) {
+        const pcy = player.y + player.h/2;
+        // Only lock on if player is near the top of the building (entering from above)
+        if (pcy >= hfY - 30 && pcy <= hfY + 40) {
+          onLadderLocked = lad;
+          player.x = lad.worldX + 7 - player.w/2; // snap to ladder
+        }
+      }
+    }
   }
-
-  // Check if player walked off the top of a ladder
-  checkLadderFall();
 
   if (player.moving) {
     player.animTimer++;
@@ -2789,7 +2831,7 @@ function draw() {
   buildings.forEach(b => entities.push({type:'building',data:b,y:(b.y+b.h)*TILE}));
   npcs.forEach(n => entities.push({type:'npc',data:n,y:n.y+28}));
   // When on a ladder or falling, draw player on top of everything
-  const onLadder = getPlayerLadder() !== null || ladderFall;
+  const onLadder = onLadderLocked !== null || ladderFall;
   entities.push({type:'player',data:player,y: onLadder ? 99999 : player.y+24});
   entities.sort((a,b) => a.y-b.y);
 
