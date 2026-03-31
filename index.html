@@ -2774,7 +2774,9 @@ function draw() {
   const entities = [];
   buildings.forEach(b => entities.push({type:'building',data:b,y:(b.y+b.h)*TILE}));
   npcs.forEach(n => entities.push({type:'npc',data:n,y:n.y+28}));
-  entities.push({type:'player',data:player,y:player.y+24});
+  // When on a ladder or falling, draw player on top of everything
+  const onLadder = getPlayerLadder() !== null || ladderFall;
+  entities.push({type:'player',data:player,y: onLadder ? 99999 : player.y+24});
   entities.sort((a,b) => a.y-b.y);
 
   entities.forEach(e => {
