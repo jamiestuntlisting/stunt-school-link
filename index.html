@@ -2924,12 +2924,8 @@ function update() {
         playNote(200, 0.35, 0.2, 'sine', 0.06);
       }
     }
-    // Check if player walked back above the building roof — exit ladder
-    if (pcy < hfY && !ladderFall) {
-      onLadderLocked = null;
-    }
-    // Check if player walked below the ladder base — exit ladder at bottom
-    if (onLadderLocked && pcy > onLadderLocked.baseY) {
+    // Exit at bottom only when actively moving downward past the ladder base
+    if (onLadderLocked && dy > 0 && pcy > onLadderLocked.baseY + 10) {
       onLadderLocked = null;
     }
   } else {
