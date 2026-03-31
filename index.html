@@ -309,57 +309,151 @@ function playMusic() {
   musicPlaying = true;
   document.getElementById('music-btn').textContent = 'Music: ON';
 
-  // Original high-energy arena rock chiptune
-  const BPM = 130;
+  // Epic dramatic stunt school anthem — ~36 seconds before looping
+  const BPM = 118;
   const beat = 60 / BPM;
-  const sixteenth = beat / 4;
+  const b = beat; // shorthand
 
-  // Driving rock riff - original composition
-  const riff = [
-    // Bar 1: power riff
-    [165,0],[165,beat*0.5],[220,beat],[196,beat*1.5],[165,beat*2],[147,beat*2.5],[165,beat*3],[196,beat*3.5],
-    // Bar 2: climb up
-    [220,beat*4],[220,beat*4.5],[262,beat*5],[294,beat*5.5],[330,beat*6],[294,beat*6.5],[262,beat*7],[220,beat*7.5],
-    // Bar 3: power riff variation
-    [196,beat*8],[196,beat*8.5],[262,beat*9],[247,beat*9.5],[220,beat*10],[196,beat*10.5],[220,beat*11],[247,beat*11.5],
-    // Bar 4: resolve
-    [262,beat*12],[262,beat*12.5],[330,beat*13],[294,beat*13.5],[262,beat*14],[220,beat*14.5],[196,beat*15],[165,beat*15.5],
-  ];
+  // E minor key: E=165/330, F#=185, G=196/392, A=220/440, B=247/494, C=262/523, D=294/587
+  // Low octave: E=82, G=98, A=110, B=124, C=131, D=147
 
-  // Heavy bass line
-  const bass = [
-    [82,0,beat*2],[73,beat*2,beat*2],[82,beat*4,beat*2],[98,beat*6,beat*2],
-    [82,beat*8,beat*2],[73,beat*10,beat*2],[98,beat*12,beat*2],[82,beat*14,beat*2],
-  ];
+  // 8 sections of 4 bars each = 32 bars = 128 beats ≈ 65 seconds
+  // We'll do 5 sections (20 bars, 80 beats) ≈ 40 seconds
 
-  // Power chords
-  const chords = [
-    [[165,220,330],0,beat*2],[[147,196,294],beat*2,beat*2],
-    [[165,220,330],beat*4,beat*2],[[196,262,392],beat*6,beat*2],
-    [[165,220,330],beat*8,beat*2],[[147,196,294],beat*10,beat*2],
-    [[196,262,392],beat*12,beat*2],[[165,220,330],beat*14,beat*2],
-  ];
+  const lead = [];
+  const bass = [];
+  const chords = [];
+  let t = 0;
 
-  const loopLen = beat * 16;
+  // === SECTION 1: Ominous intro (bars 1-4, 16 beats) ===
+  // Sparse, low, mysterious — sets the mood
+  lead.push([165,t,b*1.5],[0,0,0]); // E3 long
+  lead.push([196,t+b*2,b*1],[185,t+b*3.5,b*0.5]);
+  lead.push([165,t+b*4,b*2]);
+  lead.push([147,t+b*6,b*1],[131,t+b*7,b*0.5],[147,t+b*7.5,b*0.5]);
+  lead.push([165,t+b*8,b*1.5],[196,t+b*10,b*1]);
+  lead.push([220,t+b*11,b*0.5],[196,t+b*11.5,b*0.5],[165,t+b*12,b*2]);
+  lead.push([147,t+b*14,b*1],[165,t+b*15,b*1]);
+  // Bass: slow pulsing E
+  bass.push([82,t,b*4],[82,t+b*4,b*4],[82,t+b*8,b*4],[82,t+b*12,b*4]);
+  // No chords yet — just atmosphere
+  t += b * 16;
+
+  // === SECTION 2: Building tension (bars 5-8) ===
+  // Riff emerges, drums start light
+  lead.push([165,t,b*0.4],[196,t+b*0.5,b*0.4],[220,t+b,b*0.4],[247,t+b*1.5,b*0.8]);
+  lead.push([262,t+b*2.5,b*0.4],[247,t+b*3,b*0.4],[220,t+b*3.5,b*0.5]);
+  lead.push([262,t+b*4,b*0.4],[294,t+b*4.5,b*0.4],[330,t+b*5,b*0.8]);
+  lead.push([294,t+b*5.5,b*0.4],[262,t+b*6,b*0.4],[247,t+b*6.5,b*0.4],[220,t+b*7,b*1]);
+  lead.push([247,t+b*8,b*0.4],[262,t+b*8.5,b*0.4],[294,t+b*9,b*0.8]);
+  lead.push([330,t+b*10,b*0.5],[294,t+b*10.5,b*0.5],[262,t+b*11,b*1]);
+  lead.push([220,t+b*12,b*0.5],[247,t+b*12.5,b*0.5],[262,t+b*13,b*0.5],[247,t+b*13.5,b*0.5]);
+  lead.push([220,t+b*14,b*0.5],[196,t+b*14.5,b*0.5],[165,t+b*15,b*1]);
+  bass.push([82,t,b*2],[98,t+b*2,b*2],[110,t+b*4,b*2],[98,t+b*6,b*2]);
+  bass.push([82,t+b*8,b*2],[98,t+b*10,b*2],[110,t+b*12,b*2],[82,t+b*14,b*2]);
+  chords.push([[165,247,330],t,b*2],[[196,294,392],t+b*2,b*2]);
+  chords.push([[220,330,440],t+b*4,b*2],[[196,294,392],t+b*6,b*2]);
+  chords.push([[165,247,330],t+b*8,b*2],[[196,294,392],t+b*10,b*2]);
+  chords.push([[220,330,440],t+b*12,b*2],[[165,247,330],t+b*14,b*2]);
+  t += b * 16;
+
+  // === SECTION 3: Full power heroic theme (bars 9-12) ===
+  // Big melody, full drums, power chords
+  lead.push([330,t,b*0.8],[294,t+b,b*0.4],[330,t+b*1.5,b*0.4],[392,t+b*2,b*1.2]);
+  lead.push([330,t+b*3.5,b*0.5]);
+  lead.push([440,t+b*4,b*0.8],[392,t+b*5,b*0.4],[440,t+b*5.5,b*0.4],[494,t+b*6,b*1.2]);
+  lead.push([440,t+b*7.5,b*0.5]);
+  lead.push([523,t+b*8,b*1],[494,t+b*9,b*0.5],[440,t+b*9.5,b*0.5],[392,t+b*10,b*1]);
+  lead.push([440,t+b*11,b*0.5],[392,t+b*11.5,b*0.5]);
+  lead.push([330,t+b*12,b*1],[294,t+b*13,b*0.5],[262,t+b*13.5,b*0.5]);
+  lead.push([294,t+b*14,b*0.5],[330,t+b*14.5,b*0.5],[294,t+b*15,b*1]);
+  bass.push([82,t,b*2],[73,t+b*2,b*2],[82,t+b*4,b*2],[98,t+b*6,b*2]);
+  bass.push([110,t+b*8,b*2],[98,t+b*10,b*2],[82,t+b*12,b*2],[73,t+b*14,b*2]);
+  chords.push([[165,247,330],t,b*2],[[147,220,294],t+b*2,b*2]);
+  chords.push([[165,247,330],t+b*4,b*2],[[196,294,392],t+b*6,b*2]);
+  chords.push([[220,330,440],t+b*8,b*2],[[196,294,392],t+b*10,b*2]);
+  chords.push([[165,247,330],t+b*12,b*2],[[147,220,294],t+b*14,b*2]);
+  t += b * 16;
+
+  // === SECTION 4: Intense bridge (bars 13-16) ===
+  // Faster rhythm, ascending tension
+  lead.push([220,t,b*0.3],[247,t+b*0.5,b*0.3],[262,t+b,b*0.3],[294,t+b*1.5,b*0.5]);
+  lead.push([330,t+b*2,b*0.3],[294,t+b*2.5,b*0.3],[330,t+b*3,b*0.3],[392,t+b*3.5,b*0.5]);
+  lead.push([440,t+b*4,b*0.3],[392,t+b*4.5,b*0.3],[440,t+b*5,b*0.3],[494,t+b*5.5,b*0.5]);
+  lead.push([523,t+b*6,b*1],[494,t+b*7,b*0.5],[440,t+b*7.5,b*0.5]);
+  lead.push([392,t+b*8,b*0.5],[440,t+b*8.5,b*0.5],[494,t+b*9,b*0.5],[523,t+b*9.5,b*0.5]);
+  lead.push([587,t+b*10,b*1.5],[523,t+b*11.5,b*0.5]);
+  lead.push([494,t+b*12,b*0.5],[440,t+b*12.5,b*0.5],[392,t+b*13,b*0.5],[330,t+b*13.5,b*0.5]);
+  lead.push([294,t+b*14,b*0.5],[330,t+b*14.5,b*0.5],[294,t+b*15,b*1]);
+  bass.push([82,t,b*1],[82,t+b,b*1],[98,t+b*2,b*1],[98,t+b*3,b*1]);
+  bass.push([110,t+b*4,b*1],[110,t+b*5,b*1],[131,t+b*6,b*2]);
+  bass.push([98,t+b*8,b*1],[110,t+b*9,b*1],[131,t+b*10,b*2]);
+  bass.push([82,t+b*12,b*1],[98,t+b*13,b*1],[73,t+b*14,b*2]);
+  chords.push([[165,247,330],t,b*2],[[196,294,392],t+b*2,b*2]);
+  chords.push([[220,330,440],t+b*4,b*2],[[262,392,523],t+b*6,b*2]);
+  chords.push([[196,294,392],t+b*8,b*2],[[262,392,523],t+b*10,b*2]);
+  chords.push([[165,247,330],t+b*12,b*2],[[147,220,294],t+b*14,b*2]);
+  t += b * 16;
+
+  // === SECTION 5: Triumphant finale (bars 17-20) ===
+  // Big sustained notes, dramatic resolution
+  lead.push([330,t,b*1.5],[392,t+b*2,b*1.5]);
+  lead.push([440,t+b*4,b*2],[392,t+b*6,b*1],[330,t+b*7,b*1]);
+  lead.push([494,t+b*8,b*1.5],[523,t+b*10,b*1.5]);
+  lead.push([587,t+b*12,b*2],[523,t+b*14,b*0.5],[494,t+b*14.5,b*0.5],[440,t+b*15,b*1]);
+  // Extra 4 bars for a grand ending (bars 21-24)
+  lead.push([392,t+b*16,b*1],[440,t+b*17,b*1],[494,t+b*18,b*2]);
+  lead.push([523,t+b*20,b*1],[587,t+b*21,b*1],[659,t+b*22,b*2]);
+  lead.push([587,t+b*24,b*1],[523,t+b*25,b*1],[494,t+b*26,b*0.5],[440,t+b*26.5,b*0.5]);
+  lead.push([392,t+b*27,b*0.5],[330,t+b*27.5,b*0.5],[294,t+b*28,b*1],[330,t+b*29,b*3]);
+  bass.push([82,t,b*4],[98,t+b*4,b*4],[110,t+b*8,b*4],[131,t+b*12,b*4]);
+  bass.push([98,t+b*16,b*4],[110,t+b*20,b*4],[82,t+b*24,b*4],[82,t+b*28,b*4]);
+  chords.push([[165,247,330],t,b*4],[[196,294,392],t+b*4,b*4]);
+  chords.push([[220,330,440],t+b*8,b*4],[[262,392,523],t+b*12,b*4]);
+  chords.push([[196,294,392],t+b*16,b*4],[[220,330,440],t+b*20,b*4]);
+  chords.push([[165,247,330],t+b*24,b*4],[[165,247,330],t+b*28,b*4]);
+  t += b * 32;
+
+  const loopLen = t;
 
   function scheduleLoop() {
     if (!musicPlaying) return;
-    // Lead riff - square wave for that rock edge
-    riff.forEach(([f,t]) => playNote(f,t,beat*0.4,'square',0.04));
-    // Bass - heavy sine
-    bass.forEach(([f,t,d]) => playNote(f,t,d,'sawtooth',0.035));
-    // Power chords - distorted feel
-    chords.forEach(([fs,t,d]) => fs.forEach(f => playNote(f,t,d,'square',0.015)));
-    // Driving drums - eighth note kick/snare pattern
-    for (let i = 0; i < 16; i++) {
-      const t = beat * i;
-      // Kick on 1 and 3
-      if (i % 2 === 0) playNote(55,t,0.08,'sine',0.06);
-      // Snare on 2 and 4
-      if (i % 2 === 1) playNote(200,t,0.05,'square',0.03);
-      // Hi-hat every eighth
-      playNote(800,t,0.02,'square',0.012);
-      playNote(800,t+beat*0.5,0.02,'square',0.008);
+    // Lead melody - square wave for that heroic chiptune sound
+    lead.forEach(([f,st,d]) => { if (f > 0) playNote(f,st,d,'square',0.035); });
+    // Bass - deep sawtooth
+    bass.forEach(([f,st,d]) => playNote(f,st,d,'sawtooth',0.03));
+    // Power chords - layered square waves
+    chords.forEach(([fs,st,d]) => fs.forEach(f => playNote(f,st,d,'square',0.012)));
+    // Drums - evolve across sections
+    const totalBeats = Math.ceil(loopLen / beat);
+    for (let i = 0; i < totalBeats; i++) {
+      const dt = beat * i;
+      const section = Math.floor(i / 16);
+      if (section === 0) {
+        // Section 1: sparse — kick every 2 beats, soft hi-hat
+        if (i % 4 === 0) playNote(50,dt,0.1,'sine',0.04);
+        if (i % 2 === 0) playNote(700,dt,0.02,'square',0.006);
+      } else if (section === 1) {
+        // Section 2: building — add snare on 2 and 4
+        if (i % 2 === 0) playNote(55,dt,0.08,'sine',0.05);
+        if (i % 4 === 2) playNote(200,dt,0.05,'square',0.025);
+        playNote(800,dt,0.02,'square',0.008);
+      } else if (section <= 3) {
+        // Sections 3-4: full power — driving beat
+        if (i % 2 === 0) playNote(55,dt,0.08,'sine',0.06);
+        if (i % 2 === 1) playNote(200,dt,0.05,'square',0.03);
+        playNote(800,dt,0.02,'square',0.012);
+        playNote(800,dt+beat*0.5,0.02,'square',0.008);
+        // Extra kick hits for intensity in section 4
+        if (section === 3 && i % 4 === 3) playNote(55,dt+beat*0.5,0.06,'sine',0.04);
+      } else {
+        // Section 5: epic finale — half-time feel with big hits
+        if (i % 4 === 0) { playNote(55,dt,0.12,'sine',0.07); playNote(55,dt+beat*0.5,0.08,'sine',0.04); }
+        if (i % 4 === 2) playNote(180,dt,0.08,'square',0.035);
+        playNote(800,dt,0.02,'square',0.01);
+        // Cymbal crashes on section start
+        if (i % 16 === 0) playNote(600,dt,0.4,'square',0.02);
+      }
     }
     setTimeout(scheduleLoop, loopLen * 1000);
   }
