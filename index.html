@@ -375,6 +375,68 @@ function stopMusic() {
   }
 }
 
+// ---- BUILDING TRANSITION SOUNDS ----
+// Each building gets a unique short sound effect that plays as you enter
+function playBuildingSound(buildingName) {
+  // Kill music immediately
+  stopMusic();
+  // Create a fresh context for the transition sound
+  const sfxCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function sfxNote(freq, start, dur, type, vol) {
+    const osc = sfxCtx.createOscillator();
+    const gain = sfxCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, sfxCtx.currentTime + start);
+    gain.gain.exponentialRampToValueAtTime(0.001, sfxCtx.currentTime + start + dur);
+    osc.connect(gain);
+    gain.connect(sfxCtx.destination);
+    osc.start(sfxCtx.currentTime + start);
+    osc.stop(sfxCtx.currentTime + start + dur);
+  }
+
+  switch(buildingName) {
+    case 'STAIR FALLS':
+      // Descending tumble sounds - quick notes going down
+      sfxNote(440, 0, 0.1, 'square', 0.08);
+      sfxNote(392, 0.08, 0.1, 'square', 0.07);
+      sfxNote(330, 0.16, 0.1, 'square', 0.06);
+      sfxNote(262, 0.24, 0.12, 'square', 0.06);
+      sfxNote(196, 0.34, 0.15, 'square', 0.05);
+      sfxNote(130, 0.46, 0.2, 'sine', 0.07); // thud
+      break;
+    case 'FIRE BURNS':
+      // Crackling fire whoosh - rising noise
+      for (let i = 0; i < 8; i++) {
+        sfxNote(200 + i*60, i*0.06, 0.12, 'sawtooth', 0.03);
+        sfxNote(150 + Math.random()*300, i*0.06, 0.08, 'square', 0.02);
+      }
+      sfxNote(600, 0.5, 0.3, 'sawtooth', 0.04); // roar
+      break;
+    case 'HIGH FALLS':
+      // Wind whistle rising then falling
+      sfxNote(300, 0, 0.15, 'sine', 0.06);
+      sfxNote(400, 0.1, 0.15, 'sine', 0.07);
+      sfxNote(500, 0.2, 0.15, 'sine', 0.08);
+      sfxNote(600, 0.3, 0.2, 'sine', 0.07);
+      sfxNote(400, 0.45, 0.15, 'sine', 0.05);
+      sfxNote(200, 0.55, 0.2, 'sine', 0.04);
+      sfxNote(100, 0.7, 0.3, 'sine', 0.06); // impact
+      break;
+    case 'STUNT COORD':
+      // Movie clapboard snap + dramatic chord
+      sfxNote(800, 0, 0.03, 'square', 0.1); // snap
+      sfxNote(900, 0.02, 0.03, 'square', 0.08);
+      sfxNote(220, 0.08, 0.4, 'triangle', 0.05); // dramatic chord
+      sfxNote(330, 0.08, 0.4, 'triangle', 0.04);
+      sfxNote(440, 0.08, 0.4, 'triangle', 0.03);
+      break;
+  }
+  // Auto-close sfx context after sounds finish
+  setTimeout(() => sfxCtx.close(), 2000);
+}
+
 document.getElementById('music-btn').addEventListener('click', () => {
   if (musicPlaying) stopMusic(); else playMusic();
 });
@@ -389,6 +451,8 @@ let nearNPC = null;
 let nearHighScoreSign = false;
 let highScoreActive = false;
 let hsActiveTab = 0;
+let nearLadder = false;
+let climbingLadder = null; // { x, topY, baseY, phase: 'climbing'|'falling'|'landed', progress: 0 }
 let frame = 0;
 const npcTalkCount = {}; // tracks which round each NPC is on
 
@@ -432,6 +496,8 @@ function handleAction() {
     openDialogue(nearNPC);
   } else if (nearHighScoreSign) {
     openHighScores();
+  } else if (nearLadder && !climbingLadder) {
+    startLadderClimb();
   }
 }
 
@@ -560,15 +626,17 @@ window.addEventListener('keydown', function splashKey(e) {
   if (!gameStarted) { skipSplash(); window.removeEventListener('keydown', splashKey); }
 });
 // Music on by default - start on first interaction (browser requires user gesture)
-document.addEventListener('click', function firstClick() {
-  if (!musicPlaying) { initAudio(); playMusic(); }
-}, {once:true});
-document.addEventListener('touchstart', function firstTouch() {
-  if (!musicPlaying) { initAudio(); playMusic(); }
-}, {once:true});
-document.addEventListener('keydown', function firstKey() {
-  if (!musicPlaying) { initAudio(); playMusic(); }
-}, {once:true});
+// Use a single flag to prevent double-start (e.g. from pageshow + interaction)
+let musicInitStarted = false;
+function tryStartMusic() {
+  if (musicInitStarted || musicPlaying) return;
+  musicInitStarted = true;
+  initAudio();
+  playMusic();
+}
+document.addEventListener('click', tryStartMusic, {once:true});
+document.addEventListener('touchstart', tryStartMusic, {once:true});
+document.addEventListener('keydown', tryStartMusic, {once:true});
 
 // ---- PLAYER ----
 let enteringBuilding = false;
@@ -604,6 +672,11 @@ window.addEventListener('pageshow', function(e) {
     if (mb) mb.style.display = 'block';
     const jArea = document.getElementById('joystick-area');
     if (jArea && isTouchDevice) jArea.style.display = 'block';
+    // Restart music only if it was playing before (avoid double-play)
+    if (musicInitStarted && !musicPlaying) {
+      initAudio();
+      playMusic();
+    }
     // Cancel any stacked game loops, then restart a single one
     if (gameLoopId) cancelAnimationFrame(gameLoopId);
     if (typeof draw === 'function') draw();
@@ -2361,6 +2434,129 @@ function closeHighScores() {
   }
 })();
 
+// ---- LADDER CLIMBING (High Falls building) ----
+// The main tall ladder on the left side of the High Falls building
+const highFallsBuilding = buildings.find(b => b.name === 'HIGH FALLS');
+const ladderWorldX = highFallsBuilding.x * TILE + 6; // matches drawLadder x + 6
+const ladderTopY = highFallsBuilding.y * TILE - 50;
+const ladderBaseY = (highFallsBuilding.y + highFallsBuilding.h) * TILE;
+
+function startLadderClimb() {
+  climbingLadder = {
+    x: ladderWorldX + 4, // center player on ladder
+    topY: ladderTopY,
+    baseY: ladderBaseY,
+    groundY: ladderBaseY + 8, // where player lands after falling
+    phase: 'climbing',
+    progress: 0 // 0 = bottom, 1 = top
+  };
+  // Play climbing sound
+  if (!audioCtx) initAudio();
+  if (audioCtx) {
+    for (let i = 0; i < 6; i++) {
+      playNote(300 + i*30, i*0.12, 0.06, 'square', 0.03);
+    }
+  }
+}
+
+function updateLadderClimb() {
+  if (!climbingLadder) return false;
+  const cl = climbingLadder;
+
+  if (cl.phase === 'climbing') {
+    cl.progress += 0.015; // climb speed
+    // Position player on ladder
+    player.x = cl.x;
+    player.y = cl.baseY - (cl.baseY - cl.topY) * cl.progress;
+    player.dir = 3; // face up
+    player.moving = true;
+    player.animTimer++;
+    if (player.animTimer > 8) { player.animFrame++; player.animTimer = 0; }
+
+    if (cl.progress >= 1) {
+      // Reached the top - start falling!
+      cl.phase = 'falling';
+      cl.progress = 0;
+      cl.fallStartY = cl.topY;
+      // Falling scream sound
+      if (!audioCtx) initAudio();
+      if (audioCtx) {
+        playNote(500, 0, 0.15, 'sine', 0.06);
+        playNote(400, 0.1, 0.15, 'sine', 0.06);
+        playNote(300, 0.2, 0.2, 'sine', 0.07);
+        playNote(200, 0.35, 0.2, 'sine', 0.06);
+      }
+    }
+  } else if (cl.phase === 'falling') {
+    cl.progress += 0.04; // accelerating fall (gravity feel)
+    const fallDist = cl.groundY - cl.fallStartY;
+    const t = Math.min(cl.progress, 1);
+    // Eased fall (accelerating)
+    const eased = t * t;
+    player.x = cl.x + 16; // fall slightly to the side of ladder
+    player.y = cl.fallStartY + fallDist * eased;
+    player.dir = 0; // face down
+    player.moving = false;
+
+    if (t >= 1) {
+      // Hit the ground!
+      cl.phase = 'landed';
+      cl.progress = 0;
+      player.y = cl.groundY;
+      // Impact thud
+      if (!audioCtx) initAudio();
+      if (audioCtx) {
+        playNote(60, 0, 0.15, 'sine', 0.1);
+        playNote(40, 0.05, 0.2, 'sine', 0.08);
+      }
+    }
+  } else if (cl.phase === 'landed') {
+    cl.progress++;
+    // Lie on ground for a moment
+    if (cl.progress > 40) {
+      climbingLadder = null;
+      return false;
+    }
+  }
+  return true;
+}
+
+function drawLadderClimb() {
+  if (!climbingLadder) return;
+  const cl = climbingLadder;
+
+  if (cl.phase === 'falling') {
+    // Draw player tumbling - rotate based on fall progress
+    const t = cl.progress;
+    // Draw a spinning player (simplified)
+    ctx.save();
+    ctx.translate(player.x + 10, player.y + 12);
+    ctx.rotate(t * Math.PI * 3); // spin
+    ctx.fillStyle = '#cc3333';
+    ctx.fillRect(-8, -10, 16, 14);
+    ctx.fillStyle = '#ffcc99';
+    ctx.fillRect(-6, -14, 12, 6);
+    ctx.fillStyle = '#3366cc';
+    ctx.fillRect(-5, -16, 10, 4);
+    ctx.restore();
+  } else if (cl.phase === 'landed') {
+    // Draw player splayed on ground
+    ctx.fillStyle = '#ffcc99';
+    ctx.fillRect(player.x + 2, player.y + 4, 10, 6); // head
+    ctx.fillStyle = '#cc3333';
+    ctx.fillRect(player.x - 2, player.y + 8, 20, 8); // body spread
+    ctx.fillStyle = '#3366cc';
+    ctx.fillRect(player.x, player.y + 2, 8, 4); // hat
+    // Stars
+    const st = Math.sin(frame * 0.15);
+    ctx.fillStyle = '#ffd700';
+    ctx.font = '8px monospace';
+    ctx.fillText('*', player.x - 4 + st*3, player.y);
+    ctx.fillText('*', player.x + 18 - st*3, player.y + 2);
+    ctx.fillText('*', player.x + 6, player.y - 4 + st*2);
+  }
+}
+
 // ---- PROXIMITY ----
 function checkProximity() {
   nearBuilding = null;
@@ -2376,6 +2572,8 @@ function checkProximity() {
       enteringBuilding = true;
       const tagMap = {'STAIR FALLS':'stairfalls','FIRE BURNS':'fireburns','HIGH FALLS':'highfalls','STUNT COORD':'stuntcoord'};
       localStorage.setItem('stuntschool_lastbuilding', tagMap[b.name] || '');
+      // Play building transition sound (also kills music)
+      playBuildingSound(b.name);
       // Hide all UI immediately
       ep.style.display = 'none';
       document.getElementById('music-btn').style.display = 'none';
@@ -2447,6 +2645,25 @@ function checkProximity() {
     }
   }
 
+  // Check ladder proximity (main ladder at High Falls building)
+  nearLadder = false;
+  if (!climbingLadder) {
+    const ladderCenterX = ladderWorldX + 7;
+    const ladderCenterY = ladderBaseY - 10;
+    const dist = Math.hypot(player.x+10 - ladderCenterX, player.y+12 - ladderCenterY);
+    if (dist < 30) {
+      nearLadder = true;
+      if (isTouchDevice) {
+        ab.style.display = 'flex';
+        ab.textContent = 'CLIMB';
+        ab.style.background = 'rgba(187,136,48,0.3)';
+        ab.style.borderColor = 'rgba(187,136,48,0.6)';
+        ab.style.color = 'rgba(204,153,64,0.9)';
+      }
+      return;
+    }
+  }
+
   // Nothing nearby - hide action button
   if (isTouchDevice) ab.style.display = 'none';
 }
@@ -2454,10 +2671,16 @@ function checkProximity() {
 // ---- UPDATE ----
 function update() {
   if (!gameStarted || dialogueActive || highScoreActive) return;
-  // Walk-into-building animation: walk in, fade, navigate immediately once inside
+  // Ladder climbing animation
+  if (climbingLadder) {
+    updateLadderClimb();
+    return;
+  }
+  // Walk-into-building animation: quick walk in, fast fade, navigate
   if (enteringBuilding && enterBuildingAnim) {
     enterBuildingAnim.timer++;
-    const walkFrames = 12;
+    const walkFrames = 8; // faster walk
+    const fadeFrames = 15; // extra frames for fade after walk
     if (enterBuildingAnim.timer <= walkFrames) {
       // Walk phase: move player toward door/building
       const t = enterBuildingAnim.timer / walkFrames;
@@ -2465,11 +2688,15 @@ function update() {
       player.y = enterBuildingAnim.startY + (enterBuildingAnim.targetY - enterBuildingAnim.startY) * t;
       player.moving = true;
       player.animTimer++;
-      if (player.animTimer > 6) { player.animFrame++; player.animTimer = 0; }
-      // Start fade immediately while walking
-      enterBuildingAnim.fadeAlpha = t * 0.6;
+      if (player.animTimer > 4) { player.animFrame++; player.animTimer = 0; }
+      // Fade starts during walk
+      enterBuildingAnim.fadeAlpha = t * 0.5;
+    } else if (enterBuildingAnim.timer <= walkFrames + fadeFrames) {
+      // Fade-to-black phase
+      const ft = (enterBuildingAnim.timer - walkFrames) / fadeFrames;
+      enterBuildingAnim.fadeAlpha = 0.5 + ft * 0.5;
     } else {
-      // Walk done - navigate now, passing user identity to the game
+      // Fully black - navigate now
       enterBuildingAnim.fadeAlpha = 1;
       let gameUrl = enterBuildingAnim.building.url;
       if (stuntUser.id) {
@@ -2555,7 +2782,13 @@ function draw() {
     switch(e.type) {
       case 'building': drawBuilding(e.data); break;
       case 'npc': drawNPC(e.data); break;
-      case 'player': drawPlayer(); break;
+      case 'player':
+        if (climbingLadder && (climbingLadder.phase === 'falling' || climbingLadder.phase === 'landed')) {
+          drawLadderClimb();
+        } else {
+          drawPlayer();
+        }
+        break;
     }
   });
 
