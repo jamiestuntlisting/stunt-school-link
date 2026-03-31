@@ -502,7 +502,7 @@ export class Game {
     // Visual pickup center is at (x+18, y+18), not (x+32, y+32)
     const playerCX = this.player.x + this.player.width / 2;
     const playerCY = this.player.y + this.player.height / 2;
-    const pickupRadius = 52;
+    const pickupRadius = 104;
 
     for (const entity of this.entities) {
       if (entity.dead || !(entity instanceof Pickup)) continue;
@@ -697,7 +697,11 @@ export class Game {
       }
 
       const info = END_REASONS[this.endReason];
-      this.fadeToState(info && info.isGameOver ? STATES.GAME_OVER : STATES.LEVEL_COMPLETE, () => {
+      // If overtime has started (survived past SURVIVE_TIME), treat death reasons as level complete
+      const diedInOvertime = this.surviveTimer >= SURVIVE_TIME &&
+        (this.endReason === 'BURNED' || this.endReason === 'BURNED_NO_FUEL' || this.endReason === 'BURNED_EXTINGUISHED');
+      const isGameOver = info && info.isGameOver && !diedInOvertime;
+      this.fadeToState(isGameOver ? STATES.GAME_OVER : STATES.LEVEL_COMPLETE, () => {
         this.gameOverScreen.setup(this.endReason, this.player, this.filmCamera, this.levelConfig, this.playerName);
       });
     }

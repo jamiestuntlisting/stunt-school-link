@@ -110,6 +110,26 @@ export class Producer extends Entity {
         this._snapToGrid();
         this.state = 'BLOCKING';
       }
+
+      // Offset blocking position if another producer is already blocking nearby (within 2 tiles)
+      if (allProducers) {
+        for (const other of allProducers) {
+          if (other === this || other.state !== 'BLOCKING') continue;
+          const odx = this.x - other.x;
+          const ody = this.y - other.y;
+          const oDist = Math.sqrt(odx * odx + ody * ody);
+          if (oDist < TILE_SIZE * 2) {
+            // Offset to a different angle around the player
+            const angleToPlayer = Math.atan2(dy, dx);
+            const offsetAngle = angleToPlayer + Math.PI / 3; // 60 degree offset
+            this.x = playerX - Math.cos(offsetAngle) * closeRange;
+            this.y = playerY - Math.sin(offsetAngle) * closeRange;
+            this._snapToGrid();
+            break;
+          }
+        }
+      }
+
       // Re-register tiles every frame (perpendicular direction may change)
       this._registerTiles(tileMap, playerX, playerY);
     } else {
@@ -121,8 +141,36 @@ export class Producer extends Entity {
 
       if (distToPlayer > 0) {
         const speed = this.moveSpeed * dt;
-        let newX = this.x + (dx / distToPlayer) * speed;
-        let newY = this.y + (dy / distToPlayer) * speed;
+
+        // Repulsion from other producers within 3 tiles
+        let repelX = 0;
+        let repelY = 0;
+        if (allProducers) {
+          for (const other of allProducers) {
+            if (other === this) continue;
+            const odx = cx - other.getCenterX();
+            const ody = cy - other.getCenterY();
+            const oDist = Math.sqrt(odx * odx + ody * ody);
+            const repelRange = TILE_SIZE * 3;
+            if (oDist > 0 && oDist < repelRange) {
+              const strength = (repelRange - oDist) / repelRange;
+              repelX += (odx / oDist) * strength;
+              repelY += (ody / oDist) * strength;
+            }
+          }
+        }
+
+        // Combine chase direction with repulsion
+        let moveX = dx / distToPlayer + repelX * 0.5;
+        let moveY = dy / distToPlayer + repelY * 0.5;
+        const moveMag = Math.sqrt(moveX * moveX + moveY * moveY);
+        if (moveMag > 0) {
+          moveX /= moveMag;
+          moveY /= moveMag;
+        }
+
+        let newX = this.x + moveX * speed;
+        let newY = this.y + moveY * speed;
 
         // Don't walk into walls
         const testX = newX + this.width / 2;

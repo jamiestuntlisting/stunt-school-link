@@ -203,14 +203,28 @@ function render() {
 
 function renderUsers() {
   const users = data.users || [];
+  const statsArr = data.userStats || [];
+  const statsMap = {};
+  for (const s of statsArr) { statsMap[s.userId] = s; }
+  const gameLabels = { stairfalls: 'Stairs', fireburns: 'Fire', highfalls: 'Falls', stuntcoord: 'Coord' };
+
   let html = '<div class="section"><h2>REGISTERED USERS (' + users.length + ')</h2><table>';
-  html += '<tr><th>NAME</th><th>USER ID</th><th>FIRST SEEN</th><th>LAST SEEN</th><th class="right">VISITS</th><th>LOCATION</th><th>DEVICE</th></tr>';
+  html += '<tr><th>NAME</th><th>USER ID</th><th>FIRST SEEN</th><th>LAST SEEN</th><th class="right">VISITS</th><th class="right">PLAY TIME</th><th class="right">GAMES PLAYED</th><th>BREAKDOWN</th><th>LOCATION</th><th>DEVICE</th></tr>';
   for (const u of users) {
     const loc = u.location ? [u.location.city, u.location.region, u.location.country].filter(Boolean).join(', ') : '-';
     const dev = (u.devices || []).map(d => '<span class="' + (d.mobile ? 'mobile-tag' : 'desktop-tag') + '">' + d.browser + (d.mobile ? ' (mobile)' : '') + '</span>').join(', ') || '-';
+    const st = statsMap[u.userId] || {};
+    const playTime = st.totalPlayTime ? fmtDur(st.totalPlayTime) : '-';
+    const gamesPlayed = st.gamesPlayed || 0;
+    const bd = st.gameBreakdown || {};
+    const breakdown = Object.entries(bd).map(function(e) { return (gameLabels[e[0]] || e[0]) + ': ' + e[1]; }).join(', ') || '-';
     html += '<tr><td>' + (u.firstName || '') + ' ' + (u.lastName || '') + '</td><td class="dim">' + u.userId + '</td>';
     html += '<td>' + fmtDate(u.firstSeen) + '</td><td>' + ago(u.lastSeen) + '</td>';
-    html += '<td class="right">' + (u.visits || 0) + '</td><td>' + loc + '</td><td>' + dev + '</td></tr>';
+    html += '<td class="right">' + (u.visits || 0) + '</td>';
+    html += '<td class="right">' + playTime + '</td>';
+    html += '<td class="right">' + gamesPlayed + '</td>';
+    html += '<td>' + breakdown + '</td>';
+    html += '<td>' + loc + '</td><td>' + dev + '</td></tr>';
   }
   html += '</table></div>';
   document.getElementById('tab-users').innerHTML = html;
