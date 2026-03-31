@@ -984,7 +984,7 @@ function isBlocked(px, py, pw, ph) {
         if (onLadderLocked) {
           const ladCenter = onLadderLocked.worldX + 7;
           if (Math.abs(pcx - ladCenter) <= 8 &&
-              pcy >= onLadderLocked.topY && pcy <= onLadderLocked.baseY + 30) {
+              pcy >= onLadderLocked.topY - 20 && pcy <= onLadderLocked.baseY + 40) {
             continue;
           }
         } else {
@@ -2834,6 +2834,10 @@ function update() {
     }
     // Check if player walked back above the building roof — exit ladder
     if (pcy < hfY && !ladderFall) {
+      onLadderLocked = null;
+    }
+    // Check if player walked below the ladder base — exit ladder at bottom
+    if (pcy > onLadderLocked?.baseY + 30) {
       onLadderLocked = null;
     }
   } else {
