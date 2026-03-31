@@ -93,6 +93,23 @@
     <div id="joystick-zone"><div id="joystick-knob"></div></div>
     <div id="action-btn">LAY<br>DOWN</div>
   </div>
+  <script>
+    // Respond to parent window requesting the latest score
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.type === 'requestScore') {
+        var score = typeof window._lastFireScore === 'number' ? window._lastFireScore : 0;
+        var urlParams = new URLSearchParams(window.location.search);
+        window.parent.postMessage({
+          type: 'score',
+          game: 'Pro Fire Burner',
+          score: score,
+          userId: urlParams.get('id') || '',
+          firstName: urlParams.get('first_name') || '',
+          lastName: urlParams.get('last_name') || ''
+        }, '*');
+      }
+    });
+  </script>
   <script type="module" src="src/main.js"></script>
 </body>
 </html>

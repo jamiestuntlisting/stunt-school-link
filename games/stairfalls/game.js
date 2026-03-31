@@ -4,6 +4,22 @@ const _stuntUserId = _urlParams.get('id') || '';
 const _stuntFirstName = _urlParams.get('first_name') || '';
 const _stuntLastName = _urlParams.get('last_name') || '';
 
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'requestScore' && window.parent !== window) {
+    // Send whatever score we have - this fires when user clicks "Back to School"
+    // We need to access the current game state somehow
+    window.parent.postMessage({
+      type: 'score',
+      game: 'Pro Stair Faller',
+      score: window._lastStairScore || 0,
+      level: window._lastStairLevel || 0,
+      userId: _stuntUserId,
+      firstName: _stuntFirstName,
+      lastName: _stuntLastName
+    }, '*');
+  }
+});
+
 // ============================================================
 // STARFALL — Phase 1+ Core Loop (Visual Overhaul)
 // ============================================================
@@ -860,6 +876,8 @@ class PlayScene extends Phaser.Scene {
             const failed = this.scoreData && (this.scoreData.crashed || this.scoreData.distFeet > 5.1);
             const passData = { health: this.currentHealth, currency: this.currency, ownedPads: this.ownedPads, protection: this.protection, skinTone: this.skinTone, playerGender: this.playerGender };
             if (this.currentHealth <= 0) {
+                window._lastStairScore = this.currency;
+                window._lastStairLevel = this.currentLevel + 1;
                 if (window.parent !== window) {
                     window.parent.postMessage({
                         type: 'score',
@@ -2715,6 +2733,8 @@ class PlayScene extends Phaser.Scene {
         // L1 caps at $9
         if (this.currentLevel === 0) earned = Math.min(earned, 9);
         this.currency += earned;
+        window._lastStairScore = this.currency;
+        window._lastStairLevel = this.currentLevel + 1;
         this.showingScore = false;
         // Delay ALL text until after the lying-still beat
         this.time.delayedCall(CONFIG.STOP_BEAT_DURATION, () => {

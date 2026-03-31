@@ -23,6 +23,7 @@ export class GameOverScreen {
     this.timer = 0;
     this.playerName = playerName || 'STUNTPERSON';
     this.finalScore = this._calculateScore();
+    window._lastFireScore = this.finalScore;
 
     addHighScore({
       playerName: this.playerName,

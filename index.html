@@ -3041,7 +3041,10 @@ function showGameIframe(url, buildingName) {
 function hideGameIframe() {
   const overlay = document.getElementById('game-iframe-overlay');
   const iframe = document.getElementById('game-iframe');
-  iframe.src = 'about:blank'; // unload game
+  // Ask the game to send its score before we unload it
+  try { iframe.contentWindow.postMessage({ type: 'requestScore' }, '*'); } catch(e) {}
+  // Small delay to let the score message arrive, then unload
+  setTimeout(() => { try { iframe.src = 'about:blank'; } catch(e) {} }, 200);
   overlay.style.display = 'none';
 
   // Reset building entry state
