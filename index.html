@@ -2696,16 +2696,19 @@ function update() {
       const ft = (enterBuildingAnim.timer - walkFrames) / fadeFrames;
       enterBuildingAnim.fadeAlpha = 0.5 + ft * 0.5;
     } else {
-      // Fully black - navigate now
+      // Fully black - navigate now (only once)
       enterBuildingAnim.fadeAlpha = 1;
-      let gameUrl = enterBuildingAnim.building.url;
-      if (stuntUser.id) {
-        const sep = gameUrl.includes('?') ? '&' : '?';
-        gameUrl += sep + 'id=' + encodeURIComponent(stuntUser.id)
-          + '&first_name=' + encodeURIComponent(stuntUser.firstName)
-          + '&last_name=' + encodeURIComponent(stuntUser.lastName);
+      if (!enterBuildingAnim.navigated) {
+        enterBuildingAnim.navigated = true;
+        let gameUrl = enterBuildingAnim.building.url;
+        if (stuntUser.id) {
+          const sep = gameUrl.includes('?') ? '&' : '?';
+          gameUrl += sep + 'id=' + encodeURIComponent(stuntUser.id)
+            + '&first_name=' + encodeURIComponent(stuntUser.firstName)
+            + '&last_name=' + encodeURIComponent(stuntUser.lastName);
+        }
+        window.location.href = gameUrl;
       }
-      window.location.href = gameUrl;
     }
     return;
   }
