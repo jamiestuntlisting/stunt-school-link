@@ -2447,12 +2447,15 @@ const climbableLadders = [
   { worldX: hfX + 6,         topY: hfY - 50,  baseY: hfY + hfH },      // Main tall ladder left
   { worldX: hfX + hfW - 18,  topY: hfY - 20,  baseY: hfY + hfH },      // Shorter right ladder
   { worldX: hfX + hfW/2 - 6, topY: hfY + hfH - 40, baseY: hfY + hfH }, // Small front ladder
-  { worldX: hfX - 14,        topY: hfY - 30,  baseY: hfY + hfH - 2 },  // Extension ladder far left
 ];
 
 function startLadderClimb() {
   if (nearLadder === null) return;
   const lad = climbableLadders[nearLadder];
+  // Calculate starting progress based on where the player grabbed the ladder
+  const ladderHeight = lad.baseY - lad.topY;
+  const playerCenterY = player.y + 12;
+  const startProgress = Math.max(0, Math.min(1, (lad.baseY - playerCenterY) / ladderHeight));
   climbingLadder = {
     ladderIdx: nearLadder,
     x: lad.worldX + 4, // center player on ladder
@@ -2460,8 +2463,12 @@ function startLadderClimb() {
     baseY: lad.baseY,
     groundY: lad.baseY + 8,
     phase: 'climbing', // 'climbing' = player-controlled, 'falling', 'landed'
-    progress: 0 // 0 = bottom, 1 = top
+    progress: startProgress // 0 = bottom, 1 = top
   };
+  // Snap player onto the ladder and hide UI prompts
+  player.x = lad.worldX + 4;
+  document.getElementById('enter-prompt').style.display = 'none';
+  if (isTouchDevice) document.getElementById('touch-action-btn').style.display = 'none';
   // Play climbing sound
   if (!audioCtx) initAudio();
   if (audioCtx) {
@@ -2504,10 +2511,12 @@ function updateLadderClimb() {
       if (player.animTimer > 8) { player.animFrame++; player.animTimer = 0; }
     }
 
-    // Exit at bottom
+    // Exit at bottom — place player just above the building (safe walkable spot)
     if (cl.progress <= 0) {
       player.x = cl.x;
-      player.y = cl.baseY;
+      // Find a safe Y: just above the building top so the player isn't stuck
+      const safeY = hfY - 22; // above building roof
+      player.y = safeY;
       climbingLadder = null;
       return false;
     }
@@ -2549,6 +2558,9 @@ function updateLadderClimb() {
   } else if (cl.phase === 'landed') {
     cl.progress++;
     if (cl.progress > 40) {
+      // Place player at safe position above building roof
+      player.y = hfY - 22;
+      player.x = cl.x + 16;
       climbingLadder = null;
       return false;
     }
@@ -2680,19 +2692,21 @@ function checkProximity() {
     }
   }
 
-  // Check ladder proximity — player must be near the BASE of any ladder (approach from below)
+  // Check ladder proximity — player can grab any part of the ladder they can reach
   nearLadder = null;
   if (!climbingLadder) {
     for (let li = 0; li < climbableLadders.length; li++) {
       const lad = climbableLadders[li];
       const ladCenterX = lad.worldX + 7;
-      // Detection zone is at and just below the ladder base (outside building collision)
-      const ladDetectY = lad.baseY + 10;
-      const dx = player.x + 10 - ladCenterX;
-      const dy = player.y + 12 - ladDetectY;
-      const dist = Math.hypot(dx, dy);
-      if (dist < 32) {
+      const pcx = player.x + 10, pcy = player.y + 12;
+      // Check horizontal distance to ladder
+      const dx = Math.abs(pcx - ladCenterX);
+      if (dx > 24) continue;
+      // Check if player's Y is within the ladder's vertical span (with some margin)
+      if (pcy >= lad.topY - 10 && pcy <= lad.baseY + 20) {
         nearLadder = li;
+        ep.style.display = 'block';
+        ep.textContent = '🪜 CLIMB';
         if (isTouchDevice) {
           ab.style.display = 'flex';
           ab.textContent = 'CLIMB';
