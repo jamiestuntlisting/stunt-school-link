@@ -3055,7 +3055,7 @@ document.getElementById('back-to-school-btn').addEventListener('click', hideGame
 
 // Listen for score messages from iframe games
 window.addEventListener('message', function(e) {
-  if (e.data && e.data.type === 'score') {
+  if (e.data && (e.data.type === 'score' || e.data.type === 'game-score')) {
     const d = e.data;
     // Map game names to our high score keys
     const gameKeyMap = {
@@ -3072,12 +3072,14 @@ window.addEventListener('message', function(e) {
         : 'Anonymous';
     const userId = d.userId || stuntUser.id || '';
     const scoreVal = d.score || 0;
+    const reputationVal = d.reputation || d.score || 0;
+    const moneyVal = d.money || d.earnings || 0;
 
     // Save to localStorage high score board immediately
     const lsKey = gameKey + '_highscores';
     try {
       const existing = JSON.parse(localStorage.getItem(lsKey) || '[]');
-      existing.push({ name: playerName, score: scoreVal, userId: userId, date: new Date().toISOString().slice(0,10) });
+      existing.push({ name: playerName, score: scoreVal, reputation: reputationVal, money: moneyVal, userId: userId, date: new Date().toISOString().slice(0,10) });
       existing.sort((a,b) => b.score - a.score);
       localStorage.setItem(lsKey, JSON.stringify(existing.slice(0, 10)));
       // Update the in-memory cache too
@@ -3095,7 +3097,9 @@ window.addEventListener('message', function(e) {
           firstName: d.firstName || stuntUser.firstName || '',
           lastName: d.lastName || stuntUser.lastName || '',
           name: playerName,
-          score: scoreVal
+          score: scoreVal,
+          reputation: reputationVal,
+          money: moneyVal
         })
       }).catch(err => console.warn('Score submit failed:', err));
     }
@@ -3103,7 +3107,7 @@ window.addEventListener('message', function(e) {
     // Analytics: store latest score for game tracking
     if (typeof _trackGameScore === 'function') _trackGameScore(gameKey, scoreVal, d.level || 0);
 
-    console.log('Score received from ' + d.game + ': ' + scoreVal + ' by ' + playerName);
+    console.log('Score received from ' + d.game + ': score=' + scoreVal + ' reputation=' + reputationVal + ' money=$' + moneyVal + ' by ' + playerName);
   }
 });
 
