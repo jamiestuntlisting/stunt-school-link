@@ -64,51 +64,85 @@ canvas {
 #dialogue-box .prompt { color: #888; font-size: 11px; margin-top: 6px; }
 #highscore-box {
   display: none;
-  background: rgba(0,0,20,0.96);
-  border: 3px solid #ffd700;
-  border-radius: 8px;
-  padding: 12px 10px 10px;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,10,1);
+  z-index: 200;
   color: #f0e6d0;
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.5;
   text-align: left;
-  box-shadow: 0 0 24px rgba(255,215,0,0.3);
-  max-height: 75%;
-  overflow-y: auto;
+  overflow: hidden;
+}
+#highscore-box .hs-inner {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 16px 16px 12px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+#highscore-box .hs-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin-bottom: 10px;
 }
 #highscore-box .hs-title {
-  color: #ffd700; font-weight: bold; font-size: 15px; text-align: center; margin-bottom: 6px;
+  color: #ffd700; font-weight: bold; font-size: 20px; text-align: center;
+  text-shadow: 0 0 12px rgba(255,215,0,0.4);
 }
+#highscore-box .hs-close {
+  position: absolute; right: 0; top: -2px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,0,0.4);
+  border-radius: 4px; color: #ffd700; font-size: 13px; font-family: monospace;
+  padding: 4px 10px; cursor: pointer;
+}
+#highscore-box .hs-close:active { background: rgba(255,215,0,0.2); }
 .hs-tabs {
-  display: flex; gap: 2px; margin-bottom: 8px; flex-wrap: wrap; justify-content: center;
+  display: flex; gap: 4px; margin-bottom: 12px;
 }
 .hs-tab {
-  background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3);
-  border-radius: 4px 4px 0 0; padding: 4px 6px; color: #888;
-  font-size: 9px; font-family: monospace; cursor: pointer; text-align: center;
-  flex: 1; min-width: 0; white-space: nowrap;
+  background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.25);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0; padding: 8px 4px; color: #777;
+  font-size: 10px; font-family: monospace; cursor: pointer; text-align: center;
+  flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, color 0.15s;
 }
+.hs-tab:active { background: rgba(255,215,0,0.2); }
 .hs-tab.active {
-  background: rgba(255,215,0,0.25); border-color: #ffd700;
+  background: rgba(255,215,0,0.22); border-color: #ffd700;
   color: #ffd700; font-weight: bold;
 }
-.hs-tab-panel { display: none; }
-.hs-tab-panel.active { display: block; }
 #highscore-box .hs-game-header {
-  color: #e8c170; font-weight: bold; font-size: 13px; margin-bottom: 4px; text-align: center;
+  color: #e8c170; font-weight: bold; font-size: 16px; margin-bottom: 8px; text-align: center;
+  border-bottom: 1px solid rgba(255,215,0,0.15); padding-bottom: 6px;
 }
-#highscore-box .hs-scores { color: #ccc; font-size: 11px; }
-#highscore-box .hs-scores .hs-row { display: flex; justify-content: space-between; padding: 2px 4px; }
+#hs-panels {
+  flex: 1; overflow-y: auto; min-height: 0;
+}
+#highscore-box .hs-scores { color: #ccc; font-size: 13px; }
+#highscore-box .hs-scores .hs-row {
+  display: flex; align-items: center; padding: 6px 8px; border-radius: 4px; margin-bottom: 2px;
+}
 #highscore-box .hs-scores .hs-row:nth-child(odd) { background: rgba(255,255,255,0.03); }
-#highscore-box .hs-scores .hs-rank { color: #888; width: 22px; }
-#highscore-box .hs-scores .hs-name { flex: 1; }
-#highscore-box .hs-scores .hs-val { color: #ffd700; text-align: right; min-width: 50px; }
+#highscore-box .hs-scores .hs-rank { color: #888; width: 28px; flex-shrink: 0; font-size: 12px; }
+#highscore-box .hs-scores .hs-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 8px; }
+#highscore-box .hs-scores .hs-val { color: #ffd700; text-align: right; flex-shrink: 0; min-width: 60px; font-weight: bold; }
+#highscore-box .hs-scores .hs-row:first-child { background: rgba(255,215,0,0.1); }
+#highscore-box .hs-scores .hs-row:first-child .hs-rank { color: #ffd700; }
 #highscore-box .hs-scores .hs-row:first-child .hs-name { color: #ffd700; }
 #highscore-box .hs-scores .hs-row:nth-child(2) .hs-name { color: #c0c0c0; }
 #highscore-box .hs-scores .hs-row:nth-child(3) .hs-name { color: #cd7f32; }
-#highscore-box .hs-empty { color: #666; font-style: italic; font-size: 11px; text-align: center; padding: 8px 0; }
-#highscore-box .hs-prompt { color: #888; font-size: 11px; margin-top: 8px; text-align: center; }
-#highscore-box .hs-nav-hint { color: #666; font-size: 10px; text-align: center; margin-top: 2px; }
+#highscore-box .hs-scores .hs-row.hs-you { background: rgba(126,200,227,0.12); border: 1px solid rgba(126,200,227,0.3); }
+#highscore-box .hs-scores .hs-row.hs-you .hs-name { color: #7ec8e3; }
+#highscore-box .hs-scores .hs-row.hs-you .hs-rank { color: #7ec8e3; }
+#highscore-box .hs-empty { color: #666; font-style: italic; font-size: 13px; text-align: center; padding: 20px 0; }
+#highscore-box .hs-footer { color: #555; font-size: 10px; text-align: center; padding-top: 8px; flex-shrink: 0; }
 #enter-prompt {
   display: none;
   background: rgba(0,0,20,0.88);
@@ -196,12 +230,16 @@ canvas {
       <div class="prompt" id="dialogue-prompt"></div>
     </div>
     <div id="enter-prompt"></div>
-    <div id="highscore-box">
-      <div class="hs-title">HIGH SCORES</div>
+  </div>
+  <div id="highscore-box">
+    <div class="hs-inner">
+      <div class="hs-header">
+        <div class="hs-title">HIGH SCORES</div>
+        <div class="hs-close" id="hs-close">CLOSE</div>
+      </div>
       <div class="hs-tabs" id="hs-tabs"></div>
       <div id="hs-panels"></div>
-      <div class="hs-nav-hint" id="hs-nav-hint"></div>
-      <div class="hs-prompt" id="hs-prompt"></div>
+      <div class="hs-footer" id="hs-footer"></div>
     </div>
   </div>
   <button id="music-btn" style="display:none;">Music: ON</button>
@@ -314,6 +352,11 @@ function playMusic() {
 function stopMusic() {
   musicPlaying = false;
   document.getElementById('music-btn').textContent = 'Music: OFF';
+  // Close audio context to immediately silence all scheduled notes
+  if (audioCtx) {
+    audioCtx.close();
+    audioCtx = null;
+  }
 }
 
 document.getElementById('music-btn').addEventListener('click', () => {
@@ -1004,36 +1047,34 @@ function drawBuilding(b) {
       ctx.fillStyle = '#5577dd';
       ctx.fillRect(x+8, y+h-6, w-16, 3);
 
-      // BIG LADDER leaning against the building (overlapping it)
-      const ladderH = h + 50;
-      const ladderTop = y - 50;
-      const lx = x + 6; // overlaps the building wall
-      // Ladder shadow cast on building (shows it's leaning/raised)
-      ctx.fillStyle = 'rgba(0,0,0,0.2)';
-      ctx.fillRect(lx+4, ladderTop+6, 16, ladderH);
-      // Ladder rails
-      ctx.fillStyle = '#bb8830';
-      ctx.fillRect(lx, ladderTop, 3, ladderH);
-      ctx.fillRect(lx+12, ladderTop, 3, ladderH);
-      // Ladder rungs
-      ctx.fillStyle = '#cc9940';
-      for (let i = 0; i < Math.floor(ladderH/6); i++) {
-        ctx.fillRect(lx+2, ladderTop + i*6, 11, 2);
+      // Helper to draw a ladder at (lx, ly) with given height
+      function drawLadder(lx, ly, lh) {
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.15)';
+        ctx.fillRect(lx+3, ly+4, 14, lh);
+        // Rails
+        ctx.fillStyle = '#bb8830';
+        ctx.fillRect(lx, ly, 3, lh);
+        ctx.fillRect(lx+12, ly, 3, lh);
+        // Rungs
+        ctx.fillStyle = '#cc9940';
+        for (let i = 0; i < Math.floor(lh/6); i++) {
+          ctx.fillRect(lx+2, ly + i*6, 11, 2);
+        }
+        // Highlight on rails
+        ctx.fillStyle = '#ddaa44';
+        ctx.fillRect(lx, ly, 1, lh);
+        ctx.fillRect(lx+12, ly, 1, lh);
       }
-      // Highlight on ladder rails (showing it's in front)
-      ctx.fillStyle = '#ddaa44';
-      ctx.fillRect(lx, ladderTop, 1, ladderH);
-      ctx.fillRect(lx+12, ladderTop, 1, ladderH);
 
-      // Height markers on building wall
-      ctx.fillStyle = '#7ec8e3';
-      ctx.font = '6px monospace';
-      ctx.textAlign = 'left';
-      for (let i = 0; i < 5; i++) {
-        const my = ladderTop + 8 + i * 18;
-        ctx.fillRect(x+1, my, 8, 1);
-        ctx.fillText(`${100-i*20}'`, x+2, my-1);
-      }
+      // Main tall ladder on the left side
+      drawLadder(x + 6, y - 50, h + 50);
+      // Shorter ladder on the right side
+      drawLadder(x + w - 18, y - 20, h + 20);
+      // Small ladder leaning against the front
+      drawLadder(x + w/2 - 6, y + h - 40, 38);
+      // Extension ladder far left (leaning against wall)
+      drawLadder(x - 14, y - 30, h + 28);
 
       // Warning tape at base
       ctx.fillStyle = '#ffcc00';
@@ -2097,8 +2138,11 @@ const highScoreGames = [
 ];
 
 const hsTabs = [
-  ...highScoreGames.map(g => ({ key: g.key, label: g.name })),
-  { key: 'overall', label: 'OVERALL' }
+  { key: 'stairfalls', label: 'STAIRS', fullLabel: 'STAIR FALLS' },
+  { key: 'fireburns', label: 'FIRE', fullLabel: 'FIRE BURNS' },
+  { key: 'highfalls', label: 'FALLS', fullLabel: 'HIGH FALLS' },
+  { key: 'stuntcoord', label: 'COORD', fullLabel: 'STUNT COORD' },
+  { key: 'overall', label: 'OVERALL', fullLabel: 'OVERALL' }
 ];
 
 let hsCache = {}; // { gameKey: [{name, score}] }
@@ -2150,35 +2194,56 @@ function computeOverallScores() {
       score: Math.round(d.total / d.weightSum),
       games: d.gamesPlayed
     }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 10);
+    .sort((a, b) => b.score - a.score);
 }
+
+// Player name for highlighting (set by games or default)
+const playerName = localStorage.getItem('stuntschool_playername') || '';
 
 function renderHSPanel(tabIdx) {
   const panels = document.getElementById('hs-panels');
   const tab = hsTabs[tabIdx];
-  let scores, isOverall = tab.key === 'overall';
+  let allScores, isOverall = tab.key === 'overall';
   if (isOverall) {
-    scores = computeOverallScores();
+    allScores = computeOverallScores();
   } else {
-    scores = (hsCache[tab.key] || []).slice(0, 10);
+    allScores = (hsCache[tab.key] || []).sort((a,b) => b.score - a.score);
   }
-  let html = '<div class="hs-game-header">' + tab.label + '</div>';
-  if (scores.length === 0) {
+  const top10 = allScores.slice(0, 10);
+  let html = '<div class="hs-game-header">' + (tab.fullLabel || tab.label) + '</div>';
+  if (top10.length === 0) {
     html += '<div class="hs-empty">No scores yet - go play!</div>';
   } else {
     html += '<div class="hs-scores">';
-    for (let i = 0; i < scores.length; i++) {
-      const s = scores[i];
+    for (let i = 0; i < top10.length; i++) {
+      const s = top10[i];
       const name = s.name || 'Anonymous';
       const val = s.score != null ? s.score.toLocaleString() : '---';
-      const extra = isOverall && s.games ? ' <span style="color:#666;font-size:10px">(' + s.games + '/4)</span>' : '';
-      html += '<div class="hs-row"><span class="hs-rank">' + (i+1) + '.</span><span class="hs-name">' + name + extra + '</span><span class="hs-val">' + val + '</span></div>';
+      const isYou = playerName && name.toLowerCase() === playerName.toLowerCase();
+      const youClass = isYou ? ' hs-you' : '';
+      const youTag = isYou ? ' <span style="color:#7ec8e3;font-size:10px;">(YOU)</span>' : '';
+      const extra = isOverall && s.games ? ' <span style="color:#555;font-size:10px;">(' + s.games + '/4)</span>' : '';
+      html += '<div class="hs-row' + youClass + '"><span class="hs-rank">' + (i+1) + '.</span><span class="hs-name">' + name + youTag + extra + '</span><span class="hs-val">' + val + '</span></div>';
     }
     html += '</div>';
   }
+  // Show player's rank if they're not in top 10
+  if (playerName && allScores.length > 0) {
+    const inTop10 = top10.some(s => s.name && s.name.toLowerCase() === playerName.toLowerCase());
+    if (!inTop10) {
+      const idx = allScores.findIndex(s => s.name && s.name.toLowerCase() === playerName.toLowerCase());
+      if (idx >= 0) {
+        const s = allScores[idx];
+        html += '<div class="hs-scores" style="margin-top:6px;border-top:1px solid rgba(126,200,227,0.2);padding-top:6px;">';
+        html += '<div class="hs-row hs-you"><span class="hs-rank">' + (idx+1) + '.</span><span class="hs-name">' + s.name + ' <span style="color:#7ec8e3;font-size:10px;">(YOU)</span></span><span class="hs-val">' + s.score.toLocaleString() + '</span></div>';
+        html += '</div>';
+      }
+    }
+  }
   if (isOverall) {
-    html += '<div style="color:#555;font-size:9px;text-align:center;margin-top:6px;">Weighted avg across games played</div>';
+    document.getElementById('hs-footer').textContent = 'Weighted average across games played';
+  } else {
+    document.getElementById('hs-footer').textContent = '';
   }
   panels.innerHTML = html;
 }
@@ -2201,14 +2266,20 @@ async function openHighScores() {
     '<div class="hs-tab' + (i === 0 ? ' active' : '') + '" data-idx="' + i + '">' + t.label + '</div>'
   ).join('');
   tabsEl.querySelectorAll('.hs-tab').forEach(tab => {
-    tab.addEventListener('click', () => switchHSTab(parseInt(tab.dataset.idx)));
+    tab.addEventListener('click', (e) => {
+      e.stopPropagation();
+      switchHSTab(parseInt(tab.dataset.idx));
+    });
   });
 
+  // Close button
+  document.getElementById('hs-close').onclick = (e) => {
+    e.stopPropagation();
+    closeHighScores();
+  };
+
   document.getElementById('hs-panels').innerHTML = '<div class="hs-empty">Loading...</div>';
-  document.getElementById('hs-nav-hint').textContent =
-    isTouchDevice ? 'Tap tabs to switch' : 'Arrow keys to switch tabs';
-  document.getElementById('hs-prompt').textContent =
-    isTouchDevice ? 'Tap outside to close' : 'Press SPACE to close';
+  document.getElementById('hs-footer').textContent = '';
   box.style.display = 'block';
 
   // Fetch scores then render
@@ -2223,22 +2294,39 @@ function closeHighScores() {
 
 // Seed demo scores for local fallback (remove once API is live)
 (function seedDemoScores() {
+  // Set a demo player name so "YOU" highlighting works
+  if (!localStorage.getItem('stuntschool_playername')) {
+    localStorage.setItem('stuntschool_playername', 'Stunt Rookie');
+  }
   const demos = {
     'stairfalls_highscores': [
-      {name:'Tumble Tom', score:9800}, {name:'Roll Rick', score:7200}, {name:'Slip Sam', score:5400}
+      {name:'Tumble Tom', score:9800}, {name:'Roll Rick', score:7200}, {name:'Slip Sam', score:5400},
+      {name:'Fall Fred', score:4800}, {name:'Trip Tracy', score:4200}, {name:'Stunt Rookie', score:3900},
+      {name:'Crash Ken', score:3100}, {name:'Bump Bob', score:2600}, {name:'Wobble Will', score:1800},
+      {name:'Stumble Steve', score:1200}
     ],
     'fireburns_highscores': [
-      {name:'Blaze Betty', score:12100}, {name:'Char Charlie', score:8900}, {name:'Singe Sue', score:6300}
+      {name:'Blaze Betty', score:12100}, {name:'Char Charlie', score:8900}, {name:'Singe Sue', score:6300},
+      {name:'Flame Frank', score:5700}, {name:'Ember Ed', score:5100}, {name:'Spark Sally', score:4400},
+      {name:'Stunt Rookie', score:3800}, {name:'Ash Andy', score:3200}, {name:'Smoke Stan', score:2500},
+      {name:'Burn Bill', score:1900}
     ],
     'highfalls_highscores': [
-      {name:'Drop Dave', score:15000}, {name:'Plunge Pat', score:11200}, {name:'Dive Diana', score:7800}
+      {name:'Drop Dave', score:15000}, {name:'Plunge Pat', score:11200}, {name:'Dive Diana', score:7800},
+      {name:'Leap Larry', score:6900}, {name:'Jump Jane', score:6100}, {name:'Vault Vince', score:5300},
+      {name:'Stunt Rookie', score:4700}, {name:'Soar Sarah', score:4000}, {name:'Glide Greg', score:3200},
+      {name:'Float Fran', score:2400}
     ],
     'stuntcoord_highscores': [
-      {name:'Action Amy', score:20000}, {name:'Take Two Tim', score:14500}, {name:'Cut Carl', score:9900}
+      {name:'Action Amy', score:20000}, {name:'Take Two Tim', score:14500}, {name:'Cut Carl', score:9900},
+      {name:'Scene Sam', score:8800}, {name:'Stunt Rookie', score:7600}, {name:'Wrap Wendy', score:6500},
+      {name:'Slate Steve', score:5800}, {name:'Boom Brad', score:4900}, {name:'Roll Rita', score:3700},
+      {name:'Marker Mike', score:2800}
     ]
   };
   for (const [key, scores] of Object.entries(demos)) {
-    if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(scores));
+    // Always refresh demo data
+    localStorage.setItem(key, JSON.stringify(scores));
   }
 })();
 
