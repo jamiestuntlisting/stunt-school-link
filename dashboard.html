@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stunt School Analytics</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a1a; color: #ccc; font-family: 'Courier New', Consolas, monospace; padding: 20px; }
+h1 { color: #FFD700; font-size: 20px; margin-bottom: 20px; text-align: center; letter-spacing: 2px; }
+h2 { color: #88CCFF; font-size: 14px; margin: 20px 0 10px; letter-spacing: 1px; border-bottom: 1px solid #222; padding-bottom: 6px; }
+h3 { color: #aaa; font-size: 12px; margin: 12px 0 6px; }
+
+#login { text-align: center; margin-top: 100px; }
+#login input { font-family: inherit; font-size: 16px; padding: 10px 16px; background: #111; border: 1px solid #333; color: #FFD700; text-align: center; width: 200px; }
+#login button { font-family: inherit; font-size: 14px; padding: 10px 20px; background: #1a2a1a; border: 1px solid #44aa44; color: #44aa44; cursor: pointer; margin-left: 8px; }
+#login button:hover { background: #2a3a2a; }
+#login .error { color: #aa4444; margin-top: 10px; font-size: 12px; }
+
+#dashboard { display: none; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.card { background: #111; border: 1px solid #222; padding: 14px; text-align: center; border-radius: 4px; }
+.card .num { font-size: 28px; color: #FFD700; font-weight: bold; }
+.card .label { font-size: 10px; color: #666; letter-spacing: 1px; margin-top: 4px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+th { text-align: left; color: #88CCFF; font-size: 10px; letter-spacing: 1px; padding: 6px 8px; border-bottom: 1px solid #333; }
+td { padding: 5px 8px; border-bottom: 1px solid #1a1a2a; }
+tr:hover td { background: #111; }
+.right { text-align: right; }
+.dim { color: #555; }
+.mobile-tag { color: #FF8C00; font-size: 10px; }
+.desktop-tag { color: #4488FF; font-size: 10px; }
+
+.bar-container { background: #111; border-radius: 2px; height: 16px; position: relative; margin: 2px 0; }
+.bar-fill { background: #FFD700; height: 100%; border-radius: 2px; min-width: 1px; }
+.bar-label { position: absolute; right: 4px; top: 0; font-size: 10px; line-height: 16px; color: #000; }
+
+.section { margin-bottom: 24px; background: #0d0d1d; padding: 14px; border: 1px solid #1a1a2a; border-radius: 4px; }
+
+.chart-row { display: flex; align-items: center; margin: 4px 0; font-size: 11px; }
+.chart-name { width: 120px; text-align: right; padding-right: 8px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chart-bar { flex: 1; height: 18px; background: #111; border-radius: 2px; position: relative; }
+.chart-bar-fill { height: 100%; border-radius: 2px; }
+.chart-val { width: 50px; text-align: right; padding-left: 6px; color: #aaa; font-size: 10px; }
+
+.session-detail { display: none; padding: 8px 16px; background: #0a0a14; font-size: 11px; }
+.session-detail td { border: none; padding: 2px 8px; }
+.clickable { cursor: pointer; }
+.clickable:hover td { background: #161625; }
+
+.refresh-btn { float: right; font-family: inherit; font-size: 11px; padding: 4px 12px; background: #111; border: 1px solid #333; color: #88CCFF; cursor: pointer; }
+.refresh-btn:hover { background: #222; }
+
+.loading { text-align: center; color: #555; padding: 40px; font-size: 14px; }
+
+.tab-bar { display: flex; gap: 0; margin-bottom: 16px; }
+.tab { padding: 8px 16px; font-family: inherit; font-size: 11px; background: #111; border: 1px solid #222; color: #666; cursor: pointer; }
+.tab.active { background: #1a1a2a; color: #FFD700; border-color: #FFD700; }
+.tab:first-child { border-radius: 4px 0 0 4px; }
+.tab:last-child { border-radius: 0 4px 4px 0; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <h1>STUNT SCHOOL ANALYTICS</h1>
+  <div>
+    <input type="password" id="pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">ENTER</button>
+  </div>
+  <div class="error" id="login-error"></div>
+</div>
+
+<div id="dashboard">
+  <h1>STUNT SCHOOL ANALYTICS <button class="refresh-btn" onclick="loadData()">REFRESH</button></h1>
+
+  <div id="overview-cards" class="cards"></div>
+
+  <div class="tab-bar" id="main-tabs">
+    <div class="tab active" data-tab="users">USERS</div>
+    <div class="tab" data-tab="games">GAMES</div>
+    <div class="tab" data-tab="npcs">NPCs</div>
+    <div class="tab" data-tab="devices">DEVICES</div>
+    <div class="tab" data-tab="locations">LOCATIONS</div>
+    <div class="tab" data-tab="sessions">SESSIONS</div>
+    <div class="tab" data-tab="scores">SCORES</div>
+  </div>
+
+  <div id="tab-users" class="tab-panel active"></div>
+  <div id="tab-games" class="tab-panel"></div>
+  <div id="tab-npcs" class="tab-panel"></div>
+  <div id="tab-devices" class="tab-panel"></div>
+  <div id="tab-locations" class="tab-panel"></div>
+  <div id="tab-sessions" class="tab-panel"></div>
+  <div id="tab-scores" class="tab-panel"></div>
+</div>
+
+<script>
+const API = 'https://stunt-scores.vercel.app/api/dashboard-data';
+let password = '';
+let data = null;
+
+// Check URL param
+const urlPw = new URLSearchParams(window.location.search).get('password');
+if (urlPw) {
+  password = urlPw;
+  doLogin();
+}
+
+// Tab switching
+document.getElementById('main-tabs').addEventListener('click', function(e) {
+  if (!e.target.classList.contains('tab')) return;
+  document.querySelectorAll('#main-tabs .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById('tab-' + e.target.dataset.tab).classList.add('active');
+});
+
+function doLogin() {
+  if (!password) password = document.getElementById('pw-input').value;
+  if (!password) return;
+  document.getElementById('login-error').textContent = '';
+  loadData();
+}
+
+async function loadData() {
+  try {
+    const res = await fetch(API + '?password=' + encodeURIComponent(password));
+    if (res.status === 401) {
+      document.getElementById('login-error').textContent = 'Wrong password';
+      password = '';
+      return;
+    }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    data = await res.json();
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    render();
+  } catch (e) {
+    document.getElementById('login-error').textContent = 'Error: ' + e.message;
+  }
+}
+
+function fmt(n) { return n != null ? n.toLocaleString() : '-'; }
+function fmtDur(sec) {
+  if (!sec) return '0s';
+  if (sec < 60) return Math.round(sec) + 's';
+  if (sec < 3600) return Math.floor(sec/60) + 'm ' + Math.round(sec%60) + 's';
+  return Math.floor(sec/3600) + 'h ' + Math.floor((sec%3600)/60) + 'm';
+}
+function fmtDate(d) {
+  if (!d) return '-';
+  const dt = new Date(d);
+  return dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+function ago(d) {
+  if (!d) return '';
+  const sec = (Date.now() - new Date(d).getTime()) / 1000;
+  if (sec < 60) return 'just now';
+  if (sec < 3600) return Math.floor(sec/60) + 'm ago';
+  if (sec < 86400) return Math.floor(sec/3600) + 'h ago';
+  return Math.floor(sec/86400) + 'd ago';
+}
+
+function render() {
+  if (!data) return;
+  const o = data.overview;
+
+  // Overview cards
+  document.getElementById('overview-cards').innerHTML = [
+    { num: fmt(o.totalUsers), label: 'TOTAL USERS' },
+    { num: fmt(o.totalSessions), label: 'TOTAL SESSIONS' },
+    { num: fmt(o.activeToday), label: 'ACTIVE TODAY' },
+    { num: fmtDur(o.avgSessionDuration), label: 'AVG SESSION' },
+    { num: fmt(data.deviceBreakdown.mobile), label: 'MOBILE' },
+    { num: fmt(data.deviceBreakdown.desktop), label: 'DESKTOP' },
+  ].map(c => '<div class="card"><div class="num">' + c.num + '</div><div class="label">' + c.label + '</div></div>').join('');
+
+  renderUsers();
+  renderGames();
+  renderNPCs();
+  renderDevices();
+  renderLocations();
+  renderSessions();
+  renderScores();
+}
+
+function renderUsers() {
+  const users = data.users || [];
+  let html = '<div class="section"><h2>REGISTERED USERS (' + users.length + ')</h2><table>';
+  html += '<tr><th>NAME</th><th>USER ID</th><th>FIRST SEEN</th><th>LAST SEEN</th><th class="right">VISITS</th><th>LOCATION</th><th>DEVICE</th></tr>';
+  for (const u of users) {
+    const loc = u.location ? [u.location.city, u.location.region, u.location.country].filter(Boolean).join(', ') : '-';
+    const dev = (u.devices || []).map(d => '<span class="' + (d.mobile ? 'mobile-tag' : 'desktop-tag') + '">' + d.browser + (d.mobile ? ' (mobile)' : '') + '</span>').join(', ') || '-';
+    html += '<tr><td>' + (u.firstName || '') + ' ' + (u.lastName || '') + '</td><td class="dim">' + u.userId + '</td>';
+    html += '<td>' + fmtDate(u.firstSeen) + '</td><td>' + ago(u.lastSeen) + '</td>';
+    html += '<td class="right">' + (u.visits || 0) + '</td><td>' + loc + '</td><td>' + dev + '</td></tr>';
+  }
+  html += '</table></div>';
+  document.getElementById('tab-users').innerHTML = html;
+}
+
+function renderGames() {
+  const games = data.gameStats || [];
+  const gameNames = { stairfalls: 'STAIR FALLS', fireburns: 'FIRE BURNS', highfalls: 'HIGH FALLS', stuntcoord: 'STUNT COORD' };
+  let html = '<div class="section"><h2>GAME STATS</h2><table>';
+  html += '<tr><th>GAME</th><th class="right">PLAYS</th><th class="right">PLAYERS</th><th class="right">AVG DURATION</th><th class="right">AVG SCORE</th><th class="right">BEST SCORE</th><th class="right">AVG LEVEL</th><th class="right">MAX LEVEL</th></tr>';
+  for (const g of games) {
+    html += '<tr><td>' + (gameNames[g._id] || g._id) + '</td>';
+    html += '<td class="right">' + fmt(g.totalPlays) + '</td>';
+    html += '<td class="right">' + fmt(g.uniquePlayerCount) + '</td>';
+    html += '<td class="right">' + fmtDur(g.avgDuration) + '</td>';
+    html += '<td class="right">' + fmt(Math.round(g.avgScore || 0)) + '</td>';
+    html += '<td class="right">' + fmt(g.maxScore || 0) + '</td>';
+    html += '<td class="right">' + (g.avgLevel ? g.avgLevel.toFixed(1) : '-') + '</td>';
+    html += '<td class="right">' + fmt(g.maxLevel || 0) + '</td></tr>';
+  }
+  html += '</table></div>';
+
+  // Play count bar chart
+  if (games.length > 0) {
+    const maxPlays = Math.max(...games.map(g => g.totalPlays));
+    html += '<div class="section"><h3>PLAYS BY GAME</h3>';
+    for (const g of games) {
+      const pct = maxPlays > 0 ? (g.totalPlays / maxPlays * 100) : 0;
+      html += '<div class="chart-row"><div class="chart-name">' + (gameNames[g._id] || g._id) + '</div>';
+      html += '<div class="chart-bar"><div class="chart-bar-fill" style="width:' + pct + '%;background:#FFD700;"></div></div>';
+      html += '<div class="chart-val">' + g.totalPlays + '</div></div>';
+    }
+    html += '</div>';
+  }
+
+  document.getElementById('tab-games').innerHTML = html;
+}
+
+function renderNPCs() {
+  const npcs = data.npcStats || [];
+  if (npcs.length === 0) {
+    document.getElementById('tab-npcs').innerHTML = '<div class="section"><h2>NPC INTERACTIONS</h2><div class="dim">No data yet</div></div>';
+    return;
+  }
+  const maxVal = Math.max(...npcs.map(n => n.totalInteractions));
+  let html = '<div class="section"><h2>NPC INTERACTIONS</h2><table>';
+  html += '<tr><th>NPC</th><th class="right">TOTAL TALKS</th><th class="right">UNIQUE SESSIONS</th><th>POPULARITY</th></tr>';
+  for (const n of npcs) {
+    const pct = maxVal > 0 ? (n.totalInteractions / maxVal * 100) : 0;
+    html += '<tr><td>' + n.npc + '</td><td class="right">' + n.totalInteractions + '</td><td class="right">' + n.uniqueSessions + '</td>';
+    html += '<td><div class="bar-container"><div class="bar-fill" style="width:' + pct + '%;background:#88CCFF;"></div></div></td></tr>';
+  }
+  html += '</table></div>';
+  document.getElementById('tab-npcs').innerHTML = html;
+}
+
+function renderDevices() {
+  const db = data.deviceBreakdown || {};
+  const bb = data.browserBreakdown || [];
+  const total = (db.mobile || 0) + (db.desktop || 0);
+
+  let html = '<div class="section"><h2>DEVICE BREAKDOWN</h2>';
+  html += '<div class="cards" style="max-width:400px;">';
+  html += '<div class="card"><div class="num" style="color:#FF8C00;">' + (db.mobile || 0) + '</div><div class="label">MOBILE (' + (total > 0 ? Math.round(db.mobile/total*100) : 0) + '%)</div></div>';
+  html += '<div class="card"><div class="num" style="color:#4488FF;">' + (db.desktop || 0) + '</div><div class="label">DESKTOP (' + (total > 0 ? Math.round(db.desktop/total*100) : 0) + '%)</div></div>';
+  html += '</div></div>';
+
+  if (bb.length > 0) {
+    const maxB = Math.max(...bb.map(b => b.count));
+    html += '<div class="section"><h3>BROWSER BREAKDOWN</h3>';
+    for (const b of bb) {
+      const pct = maxB > 0 ? (b.count / maxB * 100) : 0;
+      html += '<div class="chart-row"><div class="chart-name">' + b.browser + '</div>';
+      html += '<div class="chart-bar"><div class="chart-bar-fill" style="width:' + pct + '%;background:#88CCFF;"></div></div>';
+      html += '<div class="chart-val">' + b.count + '</div></div>';
+    }
+    html += '</div>';
+  }
+
+  document.getElementById('tab-devices').innerHTML = html;
+}
+
+function renderLocations() {
+  const locs = data.locationBreakdown || [];
+  if (locs.length === 0) {
+    document.getElementById('tab-locations').innerHTML = '<div class="section"><h2>LOCATIONS</h2><div class="dim">No data yet</div></div>';
+    return;
+  }
+  const maxL = Math.max(...locs.map(l => l.count));
+  let html = '<div class="section"><h2>USER LOCATIONS</h2><table>';
+  html += '<tr><th>COUNTRY</th><th>CITY</th><th class="right">USERS</th><th></th></tr>';
+  for (const l of locs) {
+    const pct = maxL > 0 ? (l.count / maxL * 100) : 0;
+    html += '<tr><td>' + l.country + '</td><td>' + (l.city || '-') + '</td><td class="right">' + l.count + '</td>';
+    html += '<td style="width:40%;"><div class="bar-container"><div class="bar-fill" style="width:' + pct + '%;background:#44aa44;"></div></div></td></tr>';
+  }
+  html += '</table></div>';
+  document.getElementById('tab-locations').innerHTML = html;
+}
+
+function renderSessions() {
+  const sessions = data.recentSessions || [];
+  let html = '<div class="section"><h2>RECENT SESSIONS (' + sessions.length + ')</h2><table id="sessions-table">';
+  html += '<tr><th>USER</th><th>STARTED</th><th class="right">DURATION</th><th class="right">GAMES</th><th class="right">NPC TALKS</th></tr>';
+  for (let i = 0; i < sessions.length; i++) {
+    const s = sessions[i];
+    const npcCount = s.npcs ? Object.values(s.npcs).reduce((a, b) => a + b, 0) : 0;
+    const gameCount = (s.games || []).length;
+    html += '<tr class="clickable" onclick="toggleSession(' + i + ')"><td>' + (s.userId || 'anon') + '</td>';
+    html += '<td>' + fmtDate(s.startedAt) + '</td>';
+    html += '<td class="right">' + fmtDur(s.durationSec) + '</td>';
+    html += '<td class="right">' + gameCount + '</td>';
+    html += '<td class="right">' + npcCount + '</td></tr>';
+    // Expandable detail row
+    html += '<tr class="session-detail" id="session-' + i + '"><td colspan="5">';
+    if (gameCount > 0) {
+      html += '<strong>Games played:</strong><br>';
+      for (const g of s.games) {
+        html += '&nbsp;&nbsp;' + g.game + ' - ' + fmtDur(g.durationSec) + ', score: ' + fmt(g.score || 0) + ', level: ' + (g.highestLevel || '-') + '<br>';
+      }
+    }
+    if (s.npcs && Object.keys(s.npcs).length > 0) {
+      html += '<strong>NPC talks:</strong><br>';
+      for (const [name, count] of Object.entries(s.npcs)) {
+        html += '&nbsp;&nbsp;' + name + ': ' + count + 'x<br>';
+      }
+    }
+    if (s.device) {
+      html += '<strong>Device:</strong> ' + (s.device.browser || '?') + ' ' + (s.device.mobile ? '(mobile)' : '(desktop)') + ' ' + (s.device.screenW || '?') + 'x' + (s.device.screenH || '?') + '<br>';
+    }
+    html += '</td></tr>';
+  }
+  html += '</table></div>';
+  document.getElementById('tab-sessions').innerHTML = html;
+}
+
+function toggleSession(idx) {
+  const el = document.getElementById('session-' + idx);
+  el.style.display = el.style.display === 'table-row' ? 'none' : 'table-row';
+}
+
+function renderScores() {
+  const ts = data.topScores || {};
+  const gameNames = { stairfalls: 'STAIR FALLS', fireburns: 'FIRE BURNS', highfalls: 'HIGH FALLS', stuntcoord: 'STUNT COORD' };
+  let html = '';
+  for (const [key, scores] of Object.entries(ts)) {
+    html += '<div class="section"><h3>' + (gameNames[key] || key) + ' TOP SCORES</h3>';
+    if (scores.length === 0) { html += '<div class="dim">No scores</div></div>'; continue; }
+    html += '<table><tr><th>#</th><th>NAME</th><th class="right">SCORE</th></tr>';
+    for (let i = 0; i < scores.length; i++) {
+      html += '<tr><td>' + (i+1) + '</td><td>' + (scores[i].name || 'Anon') + '</td><td class="right">' + fmt(scores[i].score) + '</td></tr>';
+    }
+    html += '</table></div>';
+  }
+  document.getElementById('tab-scores').innerHTML = html;
+}
+</script>
+</body>
+</html>

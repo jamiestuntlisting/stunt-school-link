@@ -1133,6 +1133,8 @@ function openDialogue(npc) {
   currentDialogue = npc;
   dialogueIndex = 0;
   showDialogueLine();
+  // Analytics: track NPC interaction
+  if (typeof _trackNPC === 'function') _trackNPC(npc.name);
 }
 function showDialogueLine() {
   const box = document.getElementById('dialogue-box');
@@ -2999,6 +3001,8 @@ function showGameIframe(url, buildingName) {
   overlay.style.display = 'block';
   // Pause overworld
   stopMusic();
+  // Analytics: track game start
+  if (typeof _trackGameStart === 'function') _trackGameStart(buildingName);
 }
 
 function hideGameIframe() {
@@ -3034,6 +3038,8 @@ function hideGameIframe() {
   else if (tag === 'highfalls') returnAnim = { type: 'hardfall', timer: 80 };
   else if (tag === 'stuntcoord') { returnAnim = { type: 'cool', timer: 60 }; hasSunglasses = true; }
 
+  // Analytics: track game end
+  if (typeof _trackGameEnd === 'function') _trackGameEnd(activeGameBuilding);
   activeGameBuilding = null;
 
   // Show UI again
@@ -3094,6 +3100,9 @@ window.addEventListener('message', function(e) {
       }).catch(err => console.warn('Score submit failed:', err));
     }
 
+    // Analytics: store latest score for game tracking
+    if (typeof _trackGameScore === 'function') _trackGameScore(gameKey, scoreVal, d.level || 0);
+
     console.log('Score received from ' + d.game + ': ' + scoreVal + ' by ' + playerName);
   }
 });
@@ -3122,6 +3131,113 @@ function gameLoop(timestamp) {
 }
 
 gameLoopId = requestAnimationFrame(gameLoop);
+
+// ---- ANALYTICS TRACKING ----
+const ANALYTICS_API = 'https://stunt-scores.vercel.app/api/analytics';
+const _sessionId = (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2));
+const _sessionStart = new Date().toISOString();
+const _sessionNPCs = {};     // { npcName: count }
+const _sessionGames = [];    // [{ game, startedAt, endedAt, durationSec, score, highestLevel }]
+let _currentGameSession = null;
+let _latestGameScore = {};   // { gameKey: { score, level } }
+
+const _deviceInfo = {
+  userAgent: navigator.userAgent,
+  mobile: isTouchDevice,
+  screenW: screen.width,
+  screenH: screen.height,
+};
+
+function _trackNPC(npcName) {
+  _sessionNPCs[npcName] = (_sessionNPCs[npcName] || 0) + 1;
+}
+
+function _trackGameStart(buildingName) {
+  const tagMap = {'STAIR FALLS':'stairfalls','FIRE BURNS':'fireburns','HIGH FALLS':'highfalls','STUNT COORD':'stuntcoord'};
+  _currentGameSession = {
+    game: tagMap[buildingName] || buildingName,
+    startedAt: new Date().toISOString(),
+  };
+}
+
+function _trackGameScore(gameKey, score, level) {
+  _latestGameScore[gameKey] = { score, level };
+}
+
+function _trackGameEnd(buildingName) {
+  if (!_currentGameSession) return;
+  const now = new Date();
+  const start = new Date(_currentGameSession.startedAt);
+  const durationSec = Math.round((now - start) / 1000);
+  const gameKey = _currentGameSession.game;
+  const scoreData = _latestGameScore[gameKey] || {};
+  _sessionGames.push({
+    game: gameKey,
+    startedAt: _currentGameSession.startedAt,
+    endedAt: now.toISOString(),
+    durationSec,
+    score: scoreData.score || 0,
+    highestLevel: scoreData.level || 0,
+  });
+  _currentGameSession = null;
+  delete _latestGameScore[gameKey];
+}
+
+function _buildHeartbeat() {
+  return {
+    action: 'heartbeat',
+    userId: stuntUser.id || 'anonymous',
+    sessionId: _sessionId,
+    startedAt: _sessionStart,
+    device: _deviceInfo,
+    games: _sessionGames,
+    npcs: _sessionNPCs,
+  };
+}
+
+function _sendHeartbeat() {
+  const payload = _buildHeartbeat();
+  fetch(ANALYTICS_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => {});
+}
+
+function _sendBeaconHeartbeat() {
+  const payload = _buildHeartbeat();
+  try {
+    navigator.sendBeacon(ANALYTICS_API, new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+  } catch (e) {
+    // Fallback
+    fetch(ANALYTICS_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), keepalive: true }).catch(() => {});
+  }
+}
+
+// Register user on load
+if (stuntUser.id) {
+  fetch(ANALYTICS_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'register',
+      userId: stuntUser.id,
+      firstName: stuntUser.firstName,
+      lastName: stuntUser.lastName,
+      device: _deviceInfo,
+    }),
+  }).catch(() => {});
+}
+
+// Heartbeat every 30 seconds
+setInterval(_sendHeartbeat, 30000);
+
+// Send heartbeat on page unload
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden') _sendBeaconHeartbeat();
+});
+window.addEventListener('beforeunload', _sendBeaconHeartbeat);
+window.addEventListener('pagehide', _sendBeaconHeartbeat);
 
 // ---- STARTUP (after all declarations) ----
 if (isReturning) {
