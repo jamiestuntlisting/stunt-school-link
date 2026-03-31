@@ -2131,10 +2131,10 @@ function drawDecoration(d) {
 const HS_API = 'https://stunt-scores.vercel.app/api/scores';
 
 const highScoreGames = [
-  { key: 'stairfalls', name: 'STAIR FALLS', weight: 1.0 },
-  { key: 'fireburns', name: 'FIRE BURNS', weight: 1.2 },
-  { key: 'highfalls', name: 'HIGH FALLS', weight: 1.5 },
-  { key: 'stuntcoord', name: 'STUNT COORD', weight: 0.8 }
+  { key: 'stairfalls', name: 'STAIR FALLS' },
+  { key: 'fireburns', name: 'FIRE BURNS' },
+  { key: 'highfalls', name: 'HIGH FALLS' },
+  { key: 'stuntcoord', name: 'STUNT COORD' }
 ];
 
 const hsTabs = [
@@ -2184,7 +2184,7 @@ function computeOverallScores() {
       if (!playerScores[n]) playerScores[n] = { total: 0, gamesPlayed: 0 };
       if (!playerScores[n]['_' + g.key]) {
         const placementPts = 10 - i; // 1st=10, 2nd=9, ..., 10th=1
-        playerScores[n].total += placementPts * g.weight;
+        playerScores[n].total += placementPts;
         playerScores[n].gamesPlayed++;
         playerScores[n]['_' + g.key] = true;
       }
@@ -2193,7 +2193,7 @@ function computeOverallScores() {
   return Object.entries(playerScores)
     .map(([name, d]) => ({
       name,
-      score: Math.round(d.total * 10) / 10, // one decimal for weighted points
+      score: d.total,
       games: d.gamesPlayed
     }))
     .sort((a, b) => b.score - a.score || b.games - a.games);
@@ -2242,6 +2242,13 @@ function renderHSPanel(tabIdx) {
         html += '</div>';
       }
     }
+  }
+  if (isOverall) {
+    html += '<div style="color:#666;font-size:10px;text-align:center;padding:12px 8px 0;line-height:1.5;">'
+      + 'Points are earned by placing in the top 10 of each game.<br>'
+      + '1st place = 10 pts, 2nd = 9 pts, down to 10th = 1 pt.<br>'
+      + 'Max score is 40 pts. Play all 4 to rank highest!'
+      + '</div>';
   }
   document.getElementById('hs-footer').textContent = '';
   panels.innerHTML = html;
