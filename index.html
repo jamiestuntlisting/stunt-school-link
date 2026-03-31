@@ -255,6 +255,22 @@ canvas {
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
+// ---- USER IDENTITY (passed from stuntlisting via URL params) ----
+// URL format: ?id=123&first_name=John&last_name=Doe
+const urlParams = new URLSearchParams(window.location.search);
+const stuntUser = {
+  id: urlParams.get('id') || localStorage.getItem('stuntschool_userid') || '',
+  firstName: urlParams.get('first_name') || localStorage.getItem('stuntschool_firstname') || '',
+  lastName: urlParams.get('last_name') || localStorage.getItem('stuntschool_lastname') || ''
+};
+// Persist to localStorage so it survives navigating to/from games
+if (stuntUser.id) {
+  localStorage.setItem('stuntschool_userid', stuntUser.id);
+  localStorage.setItem('stuntschool_firstname', stuntUser.firstName);
+  localStorage.setItem('stuntschool_lastname', stuntUser.lastName);
+  localStorage.setItem('stuntschool_playername', stuntUser.firstName + ' ' + stuntUser.lastName);
+}
+
 // Vertical phone aspect ratio: 9:16
 const W = 360, H = 640;
 canvas.width = W;
@@ -2199,8 +2215,15 @@ function computeOverallScores() {
     .sort((a, b) => b.score - a.score || b.games - a.games);
 }
 
-// Player name for highlighting (set by games or default)
+// Player identity for highlighting
 const playerName = localStorage.getItem('stuntschool_playername') || '';
+const playerUserId = localStorage.getItem('stuntschool_userid') || '';
+
+function isYouScore(s) {
+  if (playerUserId && s.userId) return s.userId === playerUserId;
+  if (playerName && s.name) return s.name.toLowerCase() === playerName.toLowerCase();
+  return false;
+}
 
 function renderHSPanel(tabIdx) {
   const panels = document.getElementById('hs-panels');
@@ -2221,19 +2244,20 @@ function renderHSPanel(tabIdx) {
       const s = top10[i];
       const name = s.name || 'Anonymous';
       const val = s.score != null ? (isOverall ? s.score + ' pts' : s.score.toLocaleString()) : '---';
-      const isYou = playerName && name.toLowerCase() === playerName.toLowerCase();
-      const youClass = isYou ? ' hs-you' : '';
-      const youTag = isYou ? ' <span style="color:#7ec8e3;font-size:10px;">(YOU)</span>' : '';
+      const youMatch = isYouScore(s);
+      const youClass = youMatch ? ' hs-you' : '';
+      const youTag = youMatch ? ' <span style="color:#7ec8e3;font-size:10px;">(YOU)</span>' : '';
       const extra = isOverall && s.games ? ' <span style="color:#555;font-size:10px;">(' + s.games + '/4)</span>' : '';
       html += '<div class="hs-row' + youClass + '"><span class="hs-rank">' + (i+1) + '.</span><span class="hs-name">' + name + youTag + extra + '</span><span class="hs-val">' + val + '</span></div>';
     }
     html += '</div>';
   }
   // Show player's rank if they're not in top 10
-  if (playerName && allScores.length > 0) {
-    const inTop10 = top10.some(s => s.name && s.name.toLowerCase() === playerName.toLowerCase());
+  const hasIdentity = playerUserId || playerName;
+  if (hasIdentity && allScores.length > 0) {
+    const inTop10 = top10.some(s => isYouScore(s));
     if (!inTop10) {
-      const idx = allScores.findIndex(s => s.name && s.name.toLowerCase() === playerName.toLowerCase());
+      const idx = allScores.findIndex(s => isYouScore(s));
       if (idx >= 0) {
         const s = allScores[idx];
         html += '<div class="hs-scores" style="margin-top:6px;border-top:1px solid rgba(126,200,227,0.2);padding-top:6px;">';
@@ -2445,9 +2469,16 @@ function update() {
       // Start fade immediately while walking
       enterBuildingAnim.fadeAlpha = t * 0.6;
     } else {
-      // Walk done - navigate now
+      // Walk done - navigate now, passing user identity to the game
       enterBuildingAnim.fadeAlpha = 1;
-      window.location.href = enterBuildingAnim.building.url;
+      let gameUrl = enterBuildingAnim.building.url;
+      if (stuntUser.id) {
+        const sep = gameUrl.includes('?') ? '&' : '?';
+        gameUrl += sep + 'id=' + encodeURIComponent(stuntUser.id)
+          + '&first_name=' + encodeURIComponent(stuntUser.firstName)
+          + '&last_name=' + encodeURIComponent(stuntUser.lastName);
+      }
+      window.location.href = gameUrl;
     }
     return;
   }
