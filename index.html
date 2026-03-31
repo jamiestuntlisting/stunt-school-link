@@ -2549,44 +2549,7 @@ function closeHighScores() {
   document.getElementById('highscore-box').style.display = 'none';
 }
 
-// Seed demo scores for local fallback (remove once API is live)
-(function seedDemoScores() {
-  // Set a demo player name so "YOU" highlighting works
-  if (!localStorage.getItem('stuntschool_playername')) {
-    localStorage.setItem('stuntschool_playername', 'Stunt Rookie');
-  }
-  // Players appearing in multiple games: Danger Dan, Fearless Fiona, Reckless Rex, Stunt Rookie
-  const demos = {
-    'stairfalls_highscores': [
-      {name:'Danger Dan', score:9800}, {name:'Roll Rick', score:7200}, {name:'Fearless Fiona', score:6400},
-      {name:'Reckless Rex', score:5800}, {name:'Trip Tracy', score:4200}, {name:'Stunt Rookie', score:3900},
-      {name:'Crash Ken', score:3100}, {name:'Bump Bob', score:2600}, {name:'Wobble Will', score:1800},
-      {name:'Stumble Steve', score:1200}
-    ],
-    'fireburns_highscores': [
-      {name:'Fearless Fiona', score:12100}, {name:'Danger Dan', score:8900}, {name:'Singe Sue', score:6300},
-      {name:'Reckless Rex', score:5700}, {name:'Ember Ed', score:5100}, {name:'Spark Sally', score:4400},
-      {name:'Stunt Rookie', score:3800}, {name:'Ash Andy', score:3200}, {name:'Smoke Stan', score:2500},
-      {name:'Burn Bill', score:1900}
-    ],
-    'highfalls_highscores': [
-      {name:'Reckless Rex', score:15000}, {name:'Danger Dan', score:11200}, {name:'Dive Diana', score:7800},
-      {name:'Fearless Fiona', score:6900}, {name:'Jump Jane', score:6100}, {name:'Vault Vince', score:5300},
-      {name:'Stunt Rookie', score:4700}, {name:'Soar Sarah', score:4000}, {name:'Glide Greg', score:3200},
-      {name:'Float Fran', score:2400}
-    ],
-    'stuntcoord_highscores': [
-      {name:'Fearless Fiona', score:20000}, {name:'Reckless Rex', score:14500}, {name:'Danger Dan', score:9900},
-      {name:'Scene Sam', score:8800}, {name:'Stunt Rookie', score:7600}, {name:'Wrap Wendy', score:6500},
-      {name:'Slate Steve', score:5800}, {name:'Boom Brad', score:4900}, {name:'Roll Rita', score:3700},
-      {name:'Marker Mike', score:2800}
-    ]
-  };
-  for (const [key, scores] of Object.entries(demos)) {
-    // Always refresh demo data
-    localStorage.setItem(key, JSON.stringify(scores));
-  }
-})();
+// Demo scores removed — API is live on MongoDB
 
 // ---- LADDERS (High Falls building) ----
 // Player walks onto ladders naturally — no special action needed.
