@@ -451,8 +451,8 @@ let nearNPC = null;
 let nearHighScoreSign = false;
 let highScoreActive = false;
 let hsActiveTab = 0;
-let nearLadder = false;
-let climbingLadder = null; // { x, topY, baseY, phase: 'climbing'|'falling'|'landed', progress: 0 }
+let nearLadder = null; // which ladder index, or null
+let climbingLadder = null; // { ladderIdx, x, topY, baseY, phase, progress }
 let frame = 0;
 const npcTalkCount = {}; // tracks which round each NPC is on
 
@@ -496,7 +496,7 @@ function handleAction() {
     openDialogue(nearNPC);
   } else if (nearHighScoreSign) {
     openHighScores();
-  } else if (nearLadder && !climbingLadder) {
+  } else if (nearLadder !== null && !climbingLadder) {
     startLadderClimb();
   }
 }
@@ -2435,26 +2435,38 @@ function closeHighScores() {
 })();
 
 // ---- LADDER CLIMBING (High Falls building) ----
-// The main tall ladder on the left side of the High Falls building
+// All climbable ladders on the High Falls building
 const highFallsBuilding = buildings.find(b => b.name === 'HIGH FALLS');
-const ladderWorldX = highFallsBuilding.x * TILE + 6; // matches drawLadder x + 6
-const ladderTopY = highFallsBuilding.y * TILE - 50;
-const ladderBaseY = (highFallsBuilding.y + highFallsBuilding.h) * TILE;
+const hfX = highFallsBuilding.x * TILE;
+const hfY = highFallsBuilding.y * TILE;
+const hfW = highFallsBuilding.w * TILE;
+const hfH = highFallsBuilding.h * TILE;
+
+// Each ladder: { worldX, topY, baseY } — matches the drawLadder calls in rendering
+const climbableLadders = [
+  { worldX: hfX + 6,         topY: hfY - 50,  baseY: hfY + hfH },      // Main tall ladder left
+  { worldX: hfX + hfW - 18,  topY: hfY - 20,  baseY: hfY + hfH },      // Shorter right ladder
+  { worldX: hfX + hfW/2 - 6, topY: hfY + hfH - 40, baseY: hfY + hfH }, // Small front ladder
+  { worldX: hfX - 14,        topY: hfY - 30,  baseY: hfY + hfH - 2 },  // Extension ladder far left
+];
 
 function startLadderClimb() {
+  if (nearLadder === null) return;
+  const lad = climbableLadders[nearLadder];
   climbingLadder = {
-    x: ladderWorldX + 4, // center player on ladder
-    topY: ladderTopY,
-    baseY: ladderBaseY,
-    groundY: ladderBaseY + 8, // where player lands after falling
-    phase: 'climbing',
+    ladderIdx: nearLadder,
+    x: lad.worldX + 4, // center player on ladder
+    topY: lad.topY,
+    baseY: lad.baseY,
+    groundY: lad.baseY + 8,
+    phase: 'climbing', // 'climbing' = player-controlled, 'falling', 'landed'
     progress: 0 // 0 = bottom, 1 = top
   };
   // Play climbing sound
   if (!audioCtx) initAudio();
   if (audioCtx) {
-    for (let i = 0; i < 6; i++) {
-      playNote(300 + i*30, i*0.12, 0.06, 'square', 0.03);
+    for (let i = 0; i < 3; i++) {
+      playNote(300 + i*30, i*0.08, 0.06, 'square', 0.03);
     }
   }
 }
@@ -2464,17 +2476,44 @@ function updateLadderClimb() {
   const cl = climbingLadder;
 
   if (cl.phase === 'climbing') {
-    cl.progress += 0.015; // climb speed
+    // Player controls climbing with up/down keys (or joystick)
+    const goUp = keys['ArrowUp'] || keys['w'] || keys['W'] || joystick.y < -0.3;
+    const goDown = keys['ArrowDown'] || keys['s'] || keys['S'] || joystick.y > 0.3;
+
+    if (goUp) {
+      cl.progress += 0.018;
+      player.moving = true;
+      player.dir = 3; // face up
+      // Periodic rung sound
+      if (Math.floor(cl.progress * 50) % 5 === 0 && audioCtx) {
+        playNote(280 + cl.progress * 100, 0, 0.03, 'square', 0.02);
+      }
+    } else if (goDown) {
+      cl.progress -= 0.018;
+      player.moving = true;
+      player.dir = 0; // face down
+    } else {
+      player.moving = false;
+    }
+
     // Position player on ladder
     player.x = cl.x;
     player.y = cl.baseY - (cl.baseY - cl.topY) * cl.progress;
-    player.dir = 3; // face up
-    player.moving = true;
-    player.animTimer++;
-    if (player.animTimer > 8) { player.animFrame++; player.animTimer = 0; }
+    if (player.moving) {
+      player.animTimer++;
+      if (player.animTimer > 8) { player.animFrame++; player.animTimer = 0; }
+    }
 
+    // Exit at bottom
+    if (cl.progress <= 0) {
+      player.x = cl.x;
+      player.y = cl.baseY;
+      climbingLadder = null;
+      return false;
+    }
+
+    // Reached the top — fall off!
     if (cl.progress >= 1) {
-      // Reached the top - start falling!
       cl.phase = 'falling';
       cl.progress = 0;
       cl.fallStartY = cl.topY;
@@ -2488,22 +2527,19 @@ function updateLadderClimb() {
       }
     }
   } else if (cl.phase === 'falling') {
-    cl.progress += 0.04; // accelerating fall (gravity feel)
+    cl.progress += 0.04;
     const fallDist = cl.groundY - cl.fallStartY;
     const t = Math.min(cl.progress, 1);
-    // Eased fall (accelerating)
     const eased = t * t;
-    player.x = cl.x + 16; // fall slightly to the side of ladder
+    player.x = cl.x + 16;
     player.y = cl.fallStartY + fallDist * eased;
-    player.dir = 0; // face down
+    player.dir = 0;
     player.moving = false;
 
     if (t >= 1) {
-      // Hit the ground!
       cl.phase = 'landed';
       cl.progress = 0;
       player.y = cl.groundY;
-      // Impact thud
       if (!audioCtx) initAudio();
       if (audioCtx) {
         playNote(60, 0, 0.15, 'sine', 0.1);
@@ -2512,7 +2548,6 @@ function updateLadderClimb() {
     }
   } else if (cl.phase === 'landed') {
     cl.progress++;
-    // Lie on ground for a moment
     if (cl.progress > 40) {
       climbingLadder = null;
       return false;
@@ -2645,22 +2680,28 @@ function checkProximity() {
     }
   }
 
-  // Check ladder proximity (main ladder at High Falls building)
-  nearLadder = false;
+  // Check ladder proximity — player must be near the BASE of any ladder (approach from below)
+  nearLadder = null;
   if (!climbingLadder) {
-    const ladderCenterX = ladderWorldX + 7;
-    const ladderCenterY = ladderBaseY - 10;
-    const dist = Math.hypot(player.x+10 - ladderCenterX, player.y+12 - ladderCenterY);
-    if (dist < 30) {
-      nearLadder = true;
-      if (isTouchDevice) {
-        ab.style.display = 'flex';
-        ab.textContent = 'CLIMB';
-        ab.style.background = 'rgba(187,136,48,0.3)';
-        ab.style.borderColor = 'rgba(187,136,48,0.6)';
-        ab.style.color = 'rgba(204,153,64,0.9)';
+    for (let li = 0; li < climbableLadders.length; li++) {
+      const lad = climbableLadders[li];
+      const ladCenterX = lad.worldX + 7;
+      // Detection zone is at and just below the ladder base (outside building collision)
+      const ladDetectY = lad.baseY + 10;
+      const dx = player.x + 10 - ladCenterX;
+      const dy = player.y + 12 - ladDetectY;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 32) {
+        nearLadder = li;
+        if (isTouchDevice) {
+          ab.style.display = 'flex';
+          ab.textContent = 'CLIMB';
+          ab.style.background = 'rgba(187,136,48,0.3)';
+          ab.style.borderColor = 'rgba(187,136,48,0.6)';
+          ab.style.color = 'rgba(204,153,64,0.9)';
+        }
+        return;
       }
-      return;
     }
   }
 
