@@ -451,8 +451,7 @@ let nearNPC = null;
 let nearHighScoreSign = false;
 let highScoreActive = false;
 let hsActiveTab = 0;
-let nearLadder = null; // which ladder index, or null
-let climbingLadder = null; // { ladderIdx, x, topY, baseY, phase, progress }
+let ladderFall = null; // { x, fallStartY, groundY, phase: 'falling'|'landed', progress }
 let frame = 0;
 const npcTalkCount = {}; // tracks which round each NPC is on
 
@@ -496,8 +495,6 @@ function handleAction() {
     openDialogue(nearNPC);
   } else if (nearHighScoreSign) {
     openHighScores();
-  } else if (nearLadder !== null && !climbingLadder) {
-    startLadderClimb();
   }
 }
 
@@ -975,6 +972,18 @@ function isBlocked(px, py, pw, ph) {
     const bx1 = b.x * TILE, by1 = b.y * TILE;
     const bx2 = (b.x + b.w) * TILE, by2 = (b.y + b.h) * TILE;
     if (px + pw > bx1 && px < bx2 && py + ph > by1 && py < by2) {
+      // Allow walking through ladder zones on the High Falls building
+      if (b.special === 'tower' && typeof climbableLadders !== 'undefined') {
+        let onLadder = false;
+        for (const lad of climbableLadders) {
+          if (pcx >= lad.worldX - 2 && pcx <= lad.worldX + 18 &&
+              pcy >= lad.topY && pcy <= lad.baseY + 30) {
+            onLadder = true;
+            break;
+          }
+        }
+        if (onLadder) continue;
+      }
       return true;
     }
   }
@@ -2434,8 +2443,10 @@ function closeHighScores() {
   }
 })();
 
-// ---- LADDER CLIMBING (High Falls building) ----
-// All climbable ladders on the High Falls building
+// ---- LADDERS (High Falls building) ----
+// Player walks onto ladders naturally — no special action needed.
+// Building collision is exempt in ladder zones (see isBlocked).
+// Walking off the top of a ladder triggers a fall.
 const highFallsBuilding = buildings.find(b => b.name === 'HIGH FALLS');
 const hfX = highFallsBuilding.x * TILE;
 const hfY = highFallsBuilding.y * TILE;
@@ -2449,83 +2460,36 @@ const climbableLadders = [
   { worldX: hfX + hfW/2 - 6, topY: hfY + hfH - 40, baseY: hfY + hfH }, // Small front ladder
 ];
 
-function startLadderClimb() {
-  if (nearLadder === null) return;
-  const lad = climbableLadders[nearLadder];
-  // Calculate starting progress based on where the player grabbed the ladder
-  const ladderHeight = lad.baseY - lad.topY;
-  const playerCenterY = player.y + 12;
-  const startProgress = Math.max(0, Math.min(1, (lad.baseY - playerCenterY) / ladderHeight));
-  climbingLadder = {
-    ladderIdx: nearLadder,
-    x: lad.worldX + 4, // center player on ladder
-    topY: lad.topY,
-    baseY: lad.baseY,
-    groundY: lad.baseY + 8,
-    phase: 'climbing', // 'climbing' = player-controlled, 'falling', 'landed'
-    progress: startProgress // 0 = bottom, 1 = top
-  };
-  // Snap player onto the ladder and hide UI prompts
-  player.x = lad.worldX + 4;
-  document.getElementById('enter-prompt').style.display = 'none';
-  if (isTouchDevice) document.getElementById('touch-action-btn').style.display = 'none';
-  // Play climbing sound
-  if (!audioCtx) initAudio();
-  if (audioCtx) {
-    for (let i = 0; i < 3; i++) {
-      playNote(300 + i*30, i*0.08, 0.06, 'square', 0.03);
+// Check if the player is currently on a ladder
+function getPlayerLadder() {
+  const pcx = player.x + player.w/2;
+  const pcy = player.y + player.h/2;
+  for (const lad of climbableLadders) {
+    if (pcx >= lad.worldX - 2 && pcx <= lad.worldX + 18 &&
+        pcy >= lad.topY - 5 && pcy <= lad.baseY + 30) {
+      return lad;
     }
   }
+  return null;
 }
 
-function updateLadderClimb() {
-  if (!climbingLadder) return false;
-  const cl = climbingLadder;
-
-  if (cl.phase === 'climbing') {
-    // Player controls climbing with up/down keys (or joystick)
-    const goUp = keys['ArrowUp'] || keys['w'] || keys['W'] || joystick.y < -0.3;
-    const goDown = keys['ArrowDown'] || keys['s'] || keys['S'] || joystick.y > 0.3;
-
-    if (goUp) {
-      cl.progress += 0.018;
-      player.moving = true;
-      player.dir = 3; // face up
-      // Periodic rung sound
-      if (Math.floor(cl.progress * 50) % 5 === 0 && audioCtx) {
-        playNote(280 + cl.progress * 100, 0, 0.03, 'square', 0.02);
-      }
-    } else if (goDown) {
-      cl.progress -= 0.018;
-      player.moving = true;
-      player.dir = 0; // face down
-    } else {
-      player.moving = false;
-    }
-
-    // Position player on ladder
-    player.x = cl.x;
-    player.y = cl.baseY - (cl.baseY - cl.topY) * cl.progress;
-    if (player.moving) {
-      player.animTimer++;
-      if (player.animTimer > 8) { player.animFrame++; player.animTimer = 0; }
-    }
-
-    // Exit at bottom — place player just above the building (safe walkable spot)
-    if (cl.progress <= 0) {
-      player.x = cl.x;
-      // Find a safe Y: just above the building top so the player isn't stuck
-      const safeY = hfY - 22; // above building roof
-      player.y = safeY;
-      climbingLadder = null;
-      return false;
-    }
-
-    // Reached the top — fall off!
-    if (cl.progress >= 1) {
-      cl.phase = 'falling';
-      cl.progress = 0;
-      cl.fallStartY = cl.topY;
+// Check if player walked off the top of a ladder — trigger fall
+function checkLadderFall() {
+  if (ladderFall) return; // already falling
+  const pcx = player.x + player.w/2;
+  const pcy = player.y + player.h/2;
+  for (const lad of climbableLadders) {
+    // Player is horizontally on the ladder and went above the top
+    if (pcx >= lad.worldX - 2 && pcx <= lad.worldX + 18 &&
+        pcy < lad.topY && pcy >= lad.topY - 20) {
+      // Walked off the top! Start falling
+      ladderFall = {
+        x: player.x,
+        fallStartY: player.y,
+        groundY: hfY - 22, // land just above building roof
+        phase: 'falling',
+        progress: 0
+      };
       // Falling scream sound
       if (!audioCtx) initAudio();
       if (audioCtx) {
@@ -2534,51 +2498,56 @@ function updateLadderClimb() {
         playNote(300, 0.2, 0.2, 'sine', 0.07);
         playNote(200, 0.35, 0.2, 'sine', 0.06);
       }
+      return;
     }
-  } else if (cl.phase === 'falling') {
-    cl.progress += 0.04;
-    const fallDist = cl.groundY - cl.fallStartY;
-    const t = Math.min(cl.progress, 1);
+  }
+}
+
+function updateLadderFall() {
+  if (!ladderFall) return false;
+  const lf = ladderFall;
+
+  if (lf.phase === 'falling') {
+    lf.progress += 0.04;
+    const fallDist = lf.groundY - lf.fallStartY;
+    const t = Math.min(lf.progress, 1);
     const eased = t * t;
-    player.x = cl.x + 16;
-    player.y = cl.fallStartY + fallDist * eased;
+    player.x = lf.x + 16;
+    player.y = lf.fallStartY + fallDist * eased;
     player.dir = 0;
     player.moving = false;
 
     if (t >= 1) {
-      cl.phase = 'landed';
-      cl.progress = 0;
-      player.y = cl.groundY;
+      lf.phase = 'landed';
+      lf.progress = 0;
+      player.y = lf.groundY;
       if (!audioCtx) initAudio();
       if (audioCtx) {
         playNote(60, 0, 0.15, 'sine', 0.1);
         playNote(40, 0.05, 0.2, 'sine', 0.08);
       }
     }
-  } else if (cl.phase === 'landed') {
-    cl.progress++;
-    if (cl.progress > 40) {
-      // Place player at safe position above building roof
+  } else if (lf.phase === 'landed') {
+    lf.progress++;
+    if (lf.progress > 40) {
       player.y = hfY - 22;
-      player.x = cl.x + 16;
-      climbingLadder = null;
+      player.x = lf.x + 16;
+      ladderFall = null;
       return false;
     }
   }
   return true;
 }
 
-function drawLadderClimb() {
-  if (!climbingLadder) return;
-  const cl = climbingLadder;
+function drawLadderFall() {
+  if (!ladderFall) return;
+  const lf = ladderFall;
 
-  if (cl.phase === 'falling') {
-    // Draw player tumbling - rotate based on fall progress
-    const t = cl.progress;
-    // Draw a spinning player (simplified)
+  if (lf.phase === 'falling') {
+    const t = lf.progress;
     ctx.save();
     ctx.translate(player.x + 10, player.y + 12);
-    ctx.rotate(t * Math.PI * 3); // spin
+    ctx.rotate(t * Math.PI * 3);
     ctx.fillStyle = '#cc3333';
     ctx.fillRect(-8, -10, 16, 14);
     ctx.fillStyle = '#ffcc99';
@@ -2586,15 +2555,13 @@ function drawLadderClimb() {
     ctx.fillStyle = '#3366cc';
     ctx.fillRect(-5, -16, 10, 4);
     ctx.restore();
-  } else if (cl.phase === 'landed') {
-    // Draw player splayed on ground
+  } else if (lf.phase === 'landed') {
     ctx.fillStyle = '#ffcc99';
-    ctx.fillRect(player.x + 2, player.y + 4, 10, 6); // head
+    ctx.fillRect(player.x + 2, player.y + 4, 10, 6);
     ctx.fillStyle = '#cc3333';
-    ctx.fillRect(player.x - 2, player.y + 8, 20, 8); // body spread
+    ctx.fillRect(player.x - 2, player.y + 8, 20, 8);
     ctx.fillStyle = '#3366cc';
-    ctx.fillRect(player.x, player.y + 2, 8, 4); // hat
-    // Stars
+    ctx.fillRect(player.x, player.y + 2, 8, 4);
     const st = Math.sin(frame * 0.15);
     ctx.fillStyle = '#ffd700';
     ctx.font = '8px monospace';
@@ -2692,33 +2659,6 @@ function checkProximity() {
     }
   }
 
-  // Check ladder proximity — player can grab any part of the ladder they can reach
-  nearLadder = null;
-  if (!climbingLadder) {
-    for (let li = 0; li < climbableLadders.length; li++) {
-      const lad = climbableLadders[li];
-      const ladCenterX = lad.worldX + 7;
-      const pcx = player.x + 10, pcy = player.y + 12;
-      // Check horizontal distance to ladder
-      const dx = Math.abs(pcx - ladCenterX);
-      if (dx > 24) continue;
-      // Check if player's Y is within the ladder's vertical span (with some margin)
-      if (pcy >= lad.topY - 10 && pcy <= lad.baseY + 20) {
-        nearLadder = li;
-        ep.style.display = 'block';
-        ep.textContent = '🪜 CLIMB';
-        if (isTouchDevice) {
-          ab.style.display = 'flex';
-          ab.textContent = 'CLIMB';
-          ab.style.background = 'rgba(187,136,48,0.3)';
-          ab.style.borderColor = 'rgba(187,136,48,0.6)';
-          ab.style.color = 'rgba(204,153,64,0.9)';
-        }
-        return;
-      }
-    }
-  }
-
   // Nothing nearby - hide action button
   if (isTouchDevice) ab.style.display = 'none';
 }
@@ -2726,9 +2666,9 @@ function checkProximity() {
 // ---- UPDATE ----
 function update() {
   if (!gameStarted || dialogueActive || highScoreActive) return;
-  // Ladder climbing animation
-  if (climbingLadder) {
-    updateLadderClimb();
+  // Ladder fall animation
+  if (ladderFall) {
+    updateLadderFall();
     return;
   }
   // Walk-into-building animation: quick walk in, fast fade, navigate
@@ -2804,6 +2744,9 @@ function update() {
   if (dx!==0 && !isBlocked(player.x+dx,player.y,player.w,player.h)) player.x+=dx;
   if (dy!==0 && !isBlocked(player.x,player.y+dy,player.w,player.h)) player.y+=dy;
 
+  // Check if player walked off the top of a ladder
+  checkLadderFall();
+
   if (player.moving) {
     player.animTimer++;
     if (player.animTimer>6) { player.animFrame++; player.animTimer=0; }
@@ -2838,8 +2781,8 @@ function draw() {
       case 'building': drawBuilding(e.data); break;
       case 'npc': drawNPC(e.data); break;
       case 'player':
-        if (climbingLadder && (climbingLadder.phase === 'falling' || climbingLadder.phase === 'landed')) {
-          drawLadderClimb();
+        if (ladderFall) {
+          drawLadderFall();
         } else {
           drawPlayer();
         }
