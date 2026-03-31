@@ -75,7 +75,7 @@ tr:hover td { background: #111; }
 </div>
 
 <div id="dashboard">
-  <h1>STUNT SCHOOL ANALYTICS <button class="refresh-btn" onclick="loadData()">REFRESH</button></h1>
+  <h1>STUNT SCHOOL ANALYTICS <span id="auto-refresh-indicator" style="font-size:10px;color:#444;margin-left:10px;"></span> <button class="refresh-btn" onclick="loadData()">REFRESH</button></h1>
 
   <div id="overview-cards" class="cards"></div>
 
@@ -126,8 +126,13 @@ function doLogin() {
   loadData();
 }
 
+let autoRefreshTimer = null;
+let lastRefresh = null;
+
 async function loadData() {
   try {
+    const indicator = document.getElementById('auto-refresh-indicator');
+    if (indicator) indicator.textContent = 'loading...';
     const res = await fetch(API + '?password=' + encodeURIComponent(password));
     if (res.status === 401) {
       document.getElementById('login-error').textContent = 'Wrong password';
@@ -138,9 +143,17 @@ async function loadData() {
     data = await res.json();
     document.getElementById('login').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
+    lastRefresh = new Date();
     render();
+    if (indicator) indicator.textContent = 'updated ' + lastRefresh.toLocaleTimeString();
+    // Start auto-refresh (every 30 seconds)
+    if (!autoRefreshTimer) {
+      autoRefreshTimer = setInterval(loadData, 30000);
+    }
   } catch (e) {
     document.getElementById('login-error').textContent = 'Error: ' + e.message;
+    const indicator = document.getElementById('auto-refresh-indicator');
+    if (indicator) indicator.textContent = 'refresh failed';
   }
 }
 
