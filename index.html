@@ -157,6 +157,61 @@ canvas {
   animation: pulse 1.5s ease-in-out infinite;
 }
 @keyframes pulse { 0%,100%{opacity:0.7} 50%{opacity:1} }
+#welcome-screen {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  background: #1a1a1a;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  z-index: 150;
+  font-family: monospace;
+  padding: 20px;
+}
+#welcome-screen .welcome-title {
+  font-size: 28px; color: #e8c170;
+  text-shadow: 3px 3px 0 #8b4513, 0 0 20px rgba(232,193,112,0.3);
+  margin-bottom: 16px; text-align: center; line-height: 1.3;
+}
+#welcome-screen .welcome-greeting {
+  font-size: 20px; color: #7ec8e3; margin-bottom: 30px; text-align: center;
+}
+#welcome-screen .welcome-loading {
+  font-size: 14px; color: #666; margin-bottom: 20px;
+}
+#welcome-screen .welcome-btn {
+  font-family: monospace; font-size: 18px; font-weight: bold;
+  padding: 14px 36px; border-radius: 8px; cursor: pointer;
+  border: 3px solid #e8c170; background: rgba(232,193,112,0.15);
+  color: #e8c170; margin: 8px;
+  text-shadow: 0 0 8px rgba(232,193,112,0.3);
+  transition: all 0.2s;
+}
+#welcome-screen .welcome-btn:active { background: rgba(232,193,112,0.35); }
+#welcome-screen .not-you-btn {
+  font-family: monospace; font-size: 13px;
+  padding: 8px 20px; border-radius: 6px; cursor: pointer;
+  border: 1px solid #555; background: transparent;
+  color: #888; margin-top: 16px;
+  transition: all 0.2s;
+}
+#welcome-screen .not-you-btn:active { color: #aaa; border-color: #888; }
+#welcome-popup {
+  display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+  background: rgba(0,0,0,0.85); z-index: 200;
+  justify-content: center; align-items: center;
+  font-family: monospace;
+}
+#welcome-popup .popup-box {
+  background: #1a1a2e; border: 3px solid #e8c170; border-radius: 12px;
+  padding: 28px 24px; max-width: 340px; text-align: center; margin: 20px;
+}
+#welcome-popup .popup-text {
+  color: #f0e6d0; font-size: 14px; line-height: 1.6; margin-bottom: 24px;
+}
+#welcome-popup .popup-ok-btn {
+  font-family: monospace; font-size: 16px; font-weight: bold;
+  padding: 10px 32px; border-radius: 6px; cursor: pointer;
+  border: 2px solid #e8c170; background: rgba(232,193,112,0.15);
+  color: #e8c170;
+}
 #title-screen {
   position: fixed; top:0; left:0; width:100%; height:100%;
   background: #1a1a1a;
@@ -217,7 +272,22 @@ canvas {
 </head>
 <body>
 
-<div id="title-screen">
+<div id="welcome-screen">
+  <div class="welcome-title">StuntListing's<br>Virtual Stunt School</div>
+  <div class="welcome-loading" id="welcome-loading">Loading...</div>
+  <div class="welcome-greeting" id="welcome-greeting" style="display:none;"></div>
+  <button class="welcome-btn" id="welcome-enter-btn" style="display:none;">Enter Virtual Stunt School</button>
+  <button class="not-you-btn" id="welcome-notyou-btn" style="display:none;">Not You?</button>
+</div>
+
+<div id="welcome-popup">
+  <div class="popup-box">
+    <div class="popup-text">You're going to navigate to StuntListing.com, login and click on "Virtual School" to play as yourself (and maybe win a prize)</div>
+    <button class="popup-ok-btn" id="welcome-popup-ok">Okay</button>
+  </div>
+</div>
+
+<div id="title-screen" style="display:none;">
   <h1>StuntListing's<br>Virtual Stunt School</h1>
   <h2>A Stunt Person's Journey</h2>
 </div>
@@ -252,7 +322,7 @@ canvas {
 <div id="game-iframe-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; background:#000;">
   <iframe id="game-iframe" style="width:100%; height:100%; border:none;" sandbox="allow-scripts allow-same-origin allow-popups" allow="autoplay"></iframe>
   <button id="back-to-school-btn" style="
-    position:fixed; top:10px; left:10px; z-index:10001;
+    position:fixed; top:50px; left:10px; z-index:10001;
     padding:4px 8px; font-size:11px; font-weight:bold;
     background:rgba(0,0,0,0.7); color:#e8c170; border:2px solid #e8c170;
     border-radius:6px; cursor:pointer; font-family:monospace;
@@ -268,20 +338,91 @@ canvas {
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
-// ---- USER IDENTITY (passed from stuntlisting via URL params) ----
-// URL format: ?id=123&first_name=John&last_name=Doe
+// ---- USER IDENTITY (id from URL, name from MySQL via API) ----
 const urlParams = new URLSearchParams(window.location.search);
 const stuntUser = {
   id: urlParams.get('id') || localStorage.getItem('stuntschool_userid') || '',
-  firstName: urlParams.get('first_name') || localStorage.getItem('stuntschool_firstname') || '',
-  lastName: urlParams.get('last_name') || localStorage.getItem('stuntschool_lastname') || ''
+  firstName: localStorage.getItem('stuntschool_firstname') || '',
+  lastName: localStorage.getItem('stuntschool_lastname') || ''
 };
-// Persist to localStorage so it survives navigating to/from games
+
+// Welcome screen logic
+const USER_LOOKUP_API = 'https://stunt-scores.vercel.app/api/user-lookup';
+const welcomeScreen = document.getElementById('welcome-screen');
+const welcomeLoading = document.getElementById('welcome-loading');
+const welcomeGreeting = document.getElementById('welcome-greeting');
+const welcomeEnterBtn = document.getElementById('welcome-enter-btn');
+const welcomeNotYouBtn = document.getElementById('welcome-notyou-btn');
+const welcomePopup = document.getElementById('welcome-popup');
+const welcomePopupOk = document.getElementById('welcome-popup-ok');
+
+function showRedirectPopup() {
+  welcomePopup.style.display = 'flex';
+}
+
+welcomePopupOk.addEventListener('click', function() {
+  window.location.href = 'https://stuntlisting.com';
+});
+
+welcomeNotYouBtn.addEventListener('click', function() {
+  showRedirectPopup();
+});
+
+function enterStuntSchool() {
+  welcomeScreen.style.display = 'none';
+  // Show title splash briefly then start game
+  const titleScreen = document.getElementById('title-screen');
+  titleScreen.style.display = 'flex';
+  setTimeout(startGame, 5200);
+  // Register user with analytics (name is resolved by this point)
+  if (typeof _registerUser === 'function') _registerUser();
+}
+
+welcomeEnterBtn.addEventListener('click', enterStuntSchool);
+
 if (stuntUser.id) {
-  localStorage.setItem('stuntschool_userid', stuntUser.id);
-  localStorage.setItem('stuntschool_firstname', stuntUser.firstName);
-  localStorage.setItem('stuntschool_lastname', stuntUser.lastName);
-  localStorage.setItem('stuntschool_playername', stuntUser.firstName + ' ' + stuntUser.lastName);
+  // We have an ID — look up the name from MySQL
+  welcomeLoading.textContent = 'Looking up your profile...';
+  fetch(USER_LOOKUP_API + '?id=' + encodeURIComponent(stuntUser.id))
+    .then(r => r.json())
+    .then(data => {
+      if (data.found && data.first_name) {
+        stuntUser.firstName = data.first_name;
+        stuntUser.lastName = data.last_name || '';
+        // Persist
+        localStorage.setItem('stuntschool_userid', stuntUser.id);
+        localStorage.setItem('stuntschool_firstname', stuntUser.firstName);
+        localStorage.setItem('stuntschool_lastname', stuntUser.lastName);
+        localStorage.setItem('stuntschool_playername', stuntUser.firstName + ' ' + stuntUser.lastName);
+        // Show welcome
+        welcomeLoading.style.display = 'none';
+        welcomeGreeting.textContent = 'Welcome, ' + stuntUser.firstName + '!';
+        welcomeGreeting.style.display = 'block';
+        welcomeEnterBtn.style.display = 'inline-block';
+        welcomeNotYouBtn.style.display = 'inline-block';
+      } else {
+        // ID not found in database
+        welcomeLoading.style.display = 'none';
+        showRedirectPopup();
+      }
+    })
+    .catch(() => {
+      // API error — try localStorage fallback
+      if (stuntUser.firstName) {
+        welcomeLoading.style.display = 'none';
+        welcomeGreeting.textContent = 'Welcome, ' + stuntUser.firstName + '!';
+        welcomeGreeting.style.display = 'block';
+        welcomeEnterBtn.style.display = 'inline-block';
+        welcomeNotYouBtn.style.display = 'inline-block';
+      } else {
+        welcomeLoading.style.display = 'none';
+        showRedirectPopup();
+      }
+    });
+} else {
+  // No ID at all — show redirect popup immediately
+  welcomeLoading.style.display = 'none';
+  showRedirectPopup();
 }
 
 // Vertical phone aspect ratio: 9:16
@@ -2835,9 +2976,7 @@ function update() {
         let gameUrl = localGameMap[enterBuildingAnim.building.name] || enterBuildingAnim.building.url;
         if (stuntUser.id) {
           const sep = gameUrl.includes('?') ? '&' : '?';
-          gameUrl += sep + 'id=' + encodeURIComponent(stuntUser.id)
-            + '&first_name=' + encodeURIComponent(stuntUser.firstName)
-            + '&last_name=' + encodeURIComponent(stuntUser.lastName);
+          gameUrl += sep + 'id=' + encodeURIComponent(stuntUser.id);
         }
         showGameIframe(gameUrl, enterBuildingAnim.building.name);
       }
@@ -3218,8 +3357,9 @@ function _sendBeaconHeartbeat() {
   }
 }
 
-// Register user on load
-if (stuntUser.id) {
+// Register user (called after user lookup completes so name is available)
+function _registerUser() {
+  if (!stuntUser.id) return;
   fetch(ANALYTICS_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -3231,6 +3371,10 @@ if (stuntUser.id) {
       device: _deviceInfo,
     }),
   }).catch(() => {});
+}
+// If returning (name already in localStorage), register immediately
+if (isReturning && stuntUser.id && stuntUser.firstName) {
+  _registerUser();
 }
 
 // Heartbeat every 30 seconds
@@ -3245,11 +3389,12 @@ window.addEventListener('pagehide', _sendBeaconHeartbeat);
 
 // ---- STARTUP (after all declarations) ----
 if (isReturning) {
+  // Returning from a game iframe — skip welcome and title, go straight to overworld
+  document.getElementById('welcome-screen').style.display = 'none';
   document.getElementById('title-screen').style.display = 'none';
   startGame();
-} else {
-  setTimeout(startGame, 5200);
 }
+// Otherwise the welcome screen handles entry via enterStuntSchool()
 </script>
 </body>
 </html>
