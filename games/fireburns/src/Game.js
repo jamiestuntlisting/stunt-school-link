@@ -271,7 +271,6 @@ export class Game {
       });
     }
 
-    const info = END_REASONS[reason];
     if (info && info.isGameOver) {
       this.soundManager.playGameOver();
       this.camera.shake(3, 0.3);
