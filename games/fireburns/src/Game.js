@@ -54,7 +54,6 @@ const END_ANIMS = {
   BURNED_EXTINGUISHED: { duration: 1.0, label: 'EXTINGUISHED!' },
   EXTINGUISHED: { duration: 1.0, label: 'PUT OUT!' },
   FELL_IN_WATER: { duration: 1.0, label: 'FELL IN WATER!' },
-  ROADKILL: { duration: 0.8, label: 'ROADKILL!' },
   LOST_THE_SHOT: { duration: 0.8, label: 'LOST THE SHOT!' },
   CLEAN_BURN: { duration: 1.2, label: 'CLEAN BURN!' },
   SAFE_OUT: { duration: 1.0, label: 'SAFE OUT!' },
@@ -103,7 +102,6 @@ export class Game {
     this.tileMap = null;
     this.entities = [];
     this.filmCamera = null;
-    this.cameraCar = null;
     this.paSwarm = null;
     this.levelConfig = null;
     this.levelTimer = null;
@@ -187,7 +185,6 @@ export class Game {
     this.tileMap = result.tileMap;
     this.player = result.player;
     this.entities = result.entities;
-    this.cameraCar = result.cameraCar;
     this.levelConfig = result.config;
     this.endReason = null;
     this.paSwarm = null;
@@ -548,7 +545,6 @@ export class Game {
       this.input.setGameControlsVisible(true);
       this.player.ignite();
       if (this.levelTimer) this.levelTimer.start();
-      if (this.cameraCar) this.cameraCar.activate();
 
       this.particles.emitBurst(this.player.getCenterX(), this.player.getCenterY(), 40, {
         r: 255, g: 150, b: 0, life: 0.8, spread: 180,
@@ -589,10 +585,6 @@ export class Game {
       } else {
         entity.update(dt);
       }
-    }
-
-    if (this.cameraCar && this.cameraCar.active) {
-      this.cameraCar.update(dt, this.player.y);
     }
 
     if (this.levelTimer) {
@@ -828,12 +820,6 @@ export class Game {
       }
     }
 
-    if (this.cameraCar) {
-      if (this.cameraCar.isPlayerTooFar(this.player.y)) {
-        tryEnd('LOST_THE_SHOT');
-      }
-    }
-
     for (const entity of this.entities) {
       if (entity.dead) continue;
 
@@ -968,12 +954,6 @@ export class Game {
           });
         }
         break;
-      case 'ROADKILL':
-        if (t < 0.3) this.camera.shake(8, 0.1);
-        if (t < 0.2 && Math.random() < 0.5) {
-          this.particles.emitBurst(px, py, 3, { r: 150, g: 120, b: 80, life: 0.8, spread: 90 });
-        }
-        break;
       case 'LOST_THE_SHOT':
         if (Math.random() < 0.2) {
           this.particles.emitBurst(px + (Math.random() - 0.5) * 60, py - 30, 1, {
@@ -1028,6 +1008,19 @@ export class Game {
           this.callSheet.setLevel(this.levelManager.getCurrentLevelConfig());
         });
       } else {
+        // Beat all levels! Save final score and report to parent
+        const finalScore = this.gameOverScreen.finalScore;
+        if (window.parent !== window) {
+          const urlParams = new URLSearchParams(window.location.search);
+          window.parent.postMessage({
+            type: 'score',
+            game: 'Pro Fire Burner',
+            score: finalScore,
+            userId: urlParams.get('id') || '',
+            firstName: urlParams.get('first_name') || '',
+            lastName: urlParams.get('last_name') || ''
+          }, '*');
+        }
         this.fadeToState(STATES.MENU, () => {});
       }
     } else if (result.action === 'RETRY_LEVEL') {

@@ -7,7 +7,6 @@ import { FireSafety } from '../entities/FireSafety.js';
 import { Extra } from '../entities/Extra.js';
 import { Principal } from '../entities/Principal.js';
 import { FilmCamera } from '../entities/FilmCamera.js';
-import { CameraCar } from '../entities/CameraCar.js';
 import { Torch } from '../entities/Torch.js';
 import { PropaneCannon } from '../entities/PropaneCannon.js';
 import { getCostumeForTheme } from '../rendering/SpriteSheet.js';
@@ -130,21 +129,10 @@ export class LevelManager {
       entities.push(new PropaneCannon(pos.col * TILE_SIZE, pos.row * TILE_SIZE));
     }
 
-    // Camera car (race levels only)
-    let cameraCar = null;
-    if (config.hasCameraCar) {
-      cameraCar = new CameraCar(
-        generated.spawnPoint.x,
-        generated.spawnPoint.y + 450
-      );
-      entities.push(cameraCar);
-    }
-
     return {
       tileMap,
       player,
       entities,
-      cameraCar,
       config,
       theme,
     };
@@ -171,7 +159,6 @@ export class LevelManager {
       cameraPanSpeed: 20,
       gelDepletionRate: 1.5,
       fuelDepletionRate: 1.5,
-      hasCameraCar: false,
       timeLimit: 0,
       title: 'BEACH BURN',
       tagline: 'Stay on fire and stay safe!',

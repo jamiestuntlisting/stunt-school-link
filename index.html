@@ -2681,6 +2681,18 @@ const hsTabs = [
 let hsCache = {}; // { gameKey: [{name, score}] }
 let hsFetching = false;
 
+function dedupeByUserId(scores) {
+  // Keep only the highest score per userId (merge name variants for same user)
+  const byId = {};
+  for (const s of scores) {
+    const key = s.userId || s.name || 'anon_' + Math.random();
+    if (!byId[key] || s.score > byId[key].score) {
+      byId[key] = { ...s };
+    }
+  }
+  return Object.values(byId).sort((a, b) => b.score - a.score);
+}
+
 async function fetchAllScores() {
   // Try API first, fall back to localStorage
   try {
@@ -2689,7 +2701,7 @@ async function fetchAllScores() {
       const data = await res.json();
       // API returns { stairfalls: [...], fireburns: [...], ... }
       for (const g of highScoreGames) {
-        hsCache[g.key] = (data[g.key] || []).sort((a,b) => b.score - a.score).slice(0, 10);
+        hsCache[g.key] = dedupeByUserId(data[g.key] || []).slice(0, 10);
       }
       return;
     }
@@ -2698,36 +2710,36 @@ async function fetchAllScores() {
   for (const g of highScoreGames) {
     try {
       const d = localStorage.getItem(g.key + '_highscores');
-      hsCache[g.key] = d ? JSON.parse(d).sort((a,b) => b.score - a.score).slice(0, 10) : [];
+      hsCache[g.key] = d ? dedupeByUserId(JSON.parse(d)).slice(0, 10) : [];
     } catch(e) { hsCache[g.key] = []; }
   }
 }
 
 function computeOverallScores() {
   // Placement-based scoring: 1st place = 10pts, 2nd = 9pts, ... 10th = 1pt
-  // Each game's placement points are multiplied by the game's weight
-  // Final score = total weighted placement points
-  const playerScores = {}; // { name: { total: 0, gamesPlayed: 0 } }
+  // Aggregate by userId (not name) to merge name variants for same person
+  const playerScores = {}; // { uniqueKey: { name, total, gamesPlayed, userId } }
   for (const g of highScoreGames) {
     const scores = (hsCache[g.key] || []).sort((a,b) => b.score - a.score);
-    // Only top 10 get placement points
     const ranked = scores.slice(0, 10);
     for (let i = 0; i < ranked.length; i++) {
+      const key = ranked[i].userId || ranked[i].name || 'Anonymous';
       const n = ranked[i].name || 'Anonymous';
-      if (!playerScores[n]) playerScores[n] = { total: 0, gamesPlayed: 0 };
-      if (!playerScores[n]['_' + g.key]) {
-        const placementPts = 10 - i; // 1st=10, 2nd=9, ..., 10th=1
-        playerScores[n].total += placementPts;
-        playerScores[n].gamesPlayed++;
-        playerScores[n]['_' + g.key] = true;
+      if (!playerScores[key]) playerScores[key] = { name: n, total: 0, gamesPlayed: 0, userId: ranked[i].userId || '' };
+      if (!playerScores[key]['_' + g.key]) {
+        const placementPts = 10 - i;
+        playerScores[key].total += placementPts;
+        playerScores[key].gamesPlayed++;
+        playerScores[key]['_' + g.key] = true;
       }
     }
   }
-  return Object.entries(playerScores)
-    .map(([name, d]) => ({
-      name,
+  return Object.values(playerScores)
+    .map(d => ({
+      name: d.name,
       score: d.total,
-      games: d.gamesPlayed
+      games: d.gamesPlayed,
+      userId: d.userId
     }))
     .sort((a, b) => b.score - a.score || b.games - a.games);
 }

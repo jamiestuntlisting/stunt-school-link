@@ -25,7 +25,6 @@ export const END_REASONS = {
   BURNED_NO_FUEL: { message: 'FLAME OUT!', subtitle: 'Ran out of fuel!', icon: '💨', isGameOver: true, priority: 2 },
   BURNED_EXTINGUISHED: { message: 'EXTINGUISHED!', subtitle: 'Fire safeties put you out!', icon: '🧯', isGameOver: true, priority: 2 },
   LOST_THE_SHOT: { message: 'LOST THE SHOT!', subtitle: 'Stayed off camera too long!', icon: '🎬', isGameOver: true, priority: 4 },
-  ROADKILL: { message: 'ROADKILL!', subtitle: 'Hit by the camera car!', icon: '🚗', isGameOver: true, priority: 3 },
   PA_ATTACK: { message: 'PA ATTACK!', subtitle: 'Set a principal on fire!', icon: '📋', isGameOver: true, priority: 1 },
   CLEAN_BURN: { message: 'CLEAN BURN!', subtitle: 'Perfect fuel management!', icon: '⭐', isGameOver: false, priority: 7 },
   SAFE_OUT: { message: 'SAFE OUT!', subtitle: 'Safely extinguished!', icon: '👍', isGameOver: false, priority: 8 },

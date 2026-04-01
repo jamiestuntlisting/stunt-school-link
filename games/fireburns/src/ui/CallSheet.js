@@ -78,12 +78,6 @@ export class CallSheet {
       ctx.fillText(`TIME LIMIT: ${config.timeLimit}s`, leftMargin, y);
     }
 
-    if (config.hasCameraCar) {
-      y += 24;
-      ctx.fillStyle = '#cc4400';
-      ctx.fillText('WARNING: CAMERA CAR IN PURSUIT', leftMargin, y);
-    }
-
     // Divider
     y += 28;
     ctx.fillStyle = '#999999';

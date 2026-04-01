@@ -10,7 +10,7 @@ export function createAdminPanel(container, levelManager, onClose) {
     'mapWidth', 'mapHeight', 'numFireSafeties', 'numGelPickups', 'numFuelPickups',
     'hasWaterFeatures', 'numTorches', 'numPropaneCannons', 'numExtras', 'numPrincipals',
     'cameraFOV', 'cameraPanSpeed', 'gelDepletionRate', 'fuelDepletionRate',
-    'hasCameraCar', 'timeLimit', 'title',
+    'timeLimit', 'title',
   ];
 
   const numericFields = [
@@ -19,7 +19,7 @@ export function createAdminPanel(container, levelManager, onClose) {
     'cameraFOV', 'cameraPanSpeed', 'gelDepletionRate', 'fuelDepletionRate', 'timeLimit',
   ];
 
-  const boolFields = ['hasWaterFeatures', 'hasCameraCar'];
+  const boolFields = ['hasWaterFeatures'];
 
   let changedCells = new Set();
 
