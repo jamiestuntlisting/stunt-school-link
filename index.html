@@ -18,10 +18,7 @@ html, body {
   overflow: hidden;
   font-family: monospace;
   image-rendering: pixelated;
-  touch-action: none;
   -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
 }
 #game-wrapper {
   position: relative;
@@ -29,6 +26,9 @@ html, body {
   max-width: 420px;
   aspect-ratio: 9/16;
   max-height: 100dvh;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 canvas {
   image-rendering: pixelated;
@@ -164,6 +164,9 @@ canvas {
   z-index: 150;
   font-family: monospace;
   padding: 20px;
+  touch-action: auto;
+  -webkit-user-select: auto;
+  user-select: auto;
 }
 #welcome-screen .welcome-title {
   font-size: 28px; color: #e8c170;
