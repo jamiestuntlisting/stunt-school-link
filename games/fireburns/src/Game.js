@@ -344,67 +344,133 @@ export class Game {
   }
 
   _renderTutorial(ctx) {
-    // Dark background with warm fire tint
-    ctx.fillStyle = '#1a0a00';
-    ctx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+    const W = VIEWPORT_WIDTH;
+    const H = VIEWPORT_HEIGHT;
+    const cx = W / 2;
+    const t = this._tutorialTimer;
 
-    // Subtle warm gradient
-    const grad = ctx.createLinearGradient(0, 0, 0, VIEWPORT_HEIGHT);
-    grad.addColorStop(0, 'rgba(40,15,0,0.5)');
-    grad.addColorStop(1, 'rgba(80,25,0,0.3)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+    // Dark background
+    ctx.fillStyle = '#0d0400';
+    ctx.fillRect(0, 0, W, H);
 
-    const cx = VIEWPORT_WIDTH / 2;
-    let y = 40;
+    // Warm radial glow from center
+    const radGrad = ctx.createRadialGradient(cx, H * 0.45, 0, cx, H * 0.45, W * 0.6);
+    radGrad.addColorStop(0, 'rgba(60,20,0,0.6)');
+    radGrad.addColorStop(0.5, 'rgba(30,8,0,0.3)');
+    radGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = radGrad;
+    ctx.fillRect(0, 0, W, H);
 
-    // Title
+    // Animated ember particles
+    ctx.save();
+    for (let i = 0; i < 20; i++) {
+      const seed = i * 137.5;
+      const ex = (seed * 7.3 + t * (20 + i * 3)) % W;
+      const ey = H - ((seed * 3.1 + t * (40 + i * 5)) % (H * 1.2));
+      const alpha = 0.3 + 0.3 * Math.sin(t * 2 + i);
+      const size = 1.5 + Math.sin(seed) * 1;
+      ctx.fillStyle = `rgba(255,${120 + i * 5},0,${alpha})`;
+      ctx.beginPath();
+      ctx.arc(ex, ey, size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // ── TITLE ──
     ctx.textAlign = 'center';
     ctx.fillStyle = '#ff8844';
+    ctx.font = 'bold 42px monospace';
+    ctx.fillText('HOW TO BURN', cx, 60);
+
+    // Subtitle
+    ctx.fillStyle = '#aa6633';
+    ctx.font = '16px monospace';
+    ctx.fillText('You are a stunt performer. Your job: stay on fire.', cx, 90);
+
+    // ── PICKUPS SECTION (left panel) ──
+    const panelW = 340;
+    const panelH = 200;
+    const leftX = cx - panelW - 30;
+    const panelY = 130;
+
+    // Panel background
+    ctx.fillStyle = 'rgba(0,30,60,0.35)';
+    ctx.strokeStyle = 'rgba(68,170,255,0.3)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(leftX, panelY, panelW, panelH, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    // Panel title
+    ctx.fillStyle = '#44aaff';
     ctx.font = 'bold 22px monospace';
-    ctx.fillText('HOW TO BURN', cx, y);
-    y += 36;
+    ctx.fillText('PICKUPS', leftX + panelW / 2, panelY + 35);
+
+    // Gel
+    ctx.font = '18px monospace';
+    ctx.fillStyle = '#44ddff';
+    ctx.fillText('💧 GEL', leftX + panelW / 2, panelY + 75);
+    ctx.fillStyle = '#88bbcc';
+    ctx.font = '14px monospace';
+    ctx.fillText('Protects your skin from burns', leftX + panelW / 2, panelY + 100);
 
     // Divider
-    ctx.fillStyle = '#553311';
-    ctx.fillRect(cx - 120, y, 240, 2);
-    y += 24;
+    ctx.fillStyle = 'rgba(68,170,255,0.2)';
+    ctx.fillRect(leftX + 40, panelY + 115, panelW - 80, 1);
 
-    // Instructions
-    ctx.font = '13px monospace';
-    const lines = [
-      { icon: '🔥', color: '#ffaa44', text: 'You are a stunt performer ON FIRE' },
-      { icon: '💧', color: '#44aaff', text: 'Collect GEL to protect your skin' },
-      { icon: '⛽', color: '#ff8833', text: 'Collect FUEL to keep the fire going' },
-      { icon: '🎬', color: '#ffcc44', text: 'Stay in the camera frame' },
-      { icon: '⏱️', color: '#44ff88', text: 'Survive until the timer runs out' },
-    ];
+    // Fuel
+    ctx.font = '18px monospace';
+    ctx.fillStyle = '#ff9944';
+    ctx.fillText('⛽ FUEL', leftX + panelW / 2, panelY + 145);
+    ctx.fillStyle = '#cc9966';
+    ctx.font = '14px monospace';
+    ctx.fillText('Keeps your fire burning', leftX + panelW / 2, panelY + 170);
 
-    for (const line of lines) {
-      ctx.fillStyle = line.color;
-      ctx.fillText(`${line.icon}  ${line.text}`, cx, y);
-      y += 26;
-    }
+    // ── OBJECTIVES SECTION (right panel) ──
+    const rightX = cx + 30;
 
-    y += 12;
+    // Panel background
+    ctx.fillStyle = 'rgba(40,20,0,0.4)';
+    ctx.strokeStyle = 'rgba(255,170,68,0.3)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(rightX, panelY, panelW, panelH, 12);
+    ctx.fill();
+    ctx.stroke();
 
-    // Divider
-    ctx.fillStyle = '#553311';
-    ctx.fillRect(cx - 80, y, 160, 1);
-    y += 20;
+    // Panel title
+    ctx.fillStyle = '#ffaa44';
+    ctx.font = 'bold 22px monospace';
+    ctx.fillText('OBJECTIVES', rightX + panelW / 2, panelY + 35);
 
-    // Tip
+    // Camera
+    ctx.font = '18px monospace';
+    ctx.fillStyle = '#ffcc44';
+    ctx.fillText('🎬 Stay in the camera frame', rightX + panelW / 2, panelY + 80);
+
+    // Survive
+    ctx.fillStyle = '#44ff88';
+    ctx.fillText('⏱️ Survive until time runs out', rightX + panelW / 2, panelY + 120);
+
+    // Pay
+    ctx.fillStyle = '#ffdd44';
+    ctx.fillText('💰 Longer burn = bigger check', rightX + panelW / 2, panelY + 160);
+
+    // ── BOTTOM TIP ──
+    ctx.fillStyle = '#775533';
+    ctx.fillRect(cx - 200, H - 100, 400, 1);
+
     ctx.fillStyle = '#aa7744';
-    ctx.font = 'italic 12px monospace';
-    ctx.fillText('The longer you burn, the bigger the check!', cx, y);
-    y += 36;
+    ctx.font = 'italic 16px monospace';
+    ctx.fillText('The longer you burn, the bigger the check!', cx, H - 72);
 
     // Tap to continue (blinking)
-    const blink = Math.sin(this._tutorialTimer * 3) > 0;
-    if (blink && this._tutorialTimer > 0.5) {
+    const blink = Math.sin(t * 3) > 0;
+    if (blink && t > 0.5) {
       ctx.fillStyle = '#ff8844';
-      ctx.font = '16px monospace';
-      ctx.fillText('TAP TO CONTINUE', cx, VIEWPORT_HEIGHT - 40);
+      ctx.font = 'bold 20px monospace';
+      ctx.fillText('TAP TO CONTINUE', cx, H - 30);
     }
 
     ctx.textAlign = 'left';
