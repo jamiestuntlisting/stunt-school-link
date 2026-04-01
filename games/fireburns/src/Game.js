@@ -71,6 +71,7 @@ const PRODUCER_COUNT = 3;
 // Pickup spawning during gameplay
 const PICKUP_SPAWN_INTERVAL = 4; // seconds between spawns
 const PICKUP_MAX_ON_MAP = 3;     // max pickups visible at once
+const STARTING_LIVES = 3;
 
 export class Game {
   constructor() {
@@ -130,6 +131,11 @@ export class Game {
     // Overtime system
     this.overtimeLevel = 0; // 0 = normal, 1 = 1.5x, 2 = 2x
     this.producersSpawned = false;
+
+    // Lives system
+    this.lives = STARTING_LIVES;
+    this._loseLifeTimer = 0;
+    this._loseLifeActive = false;
   }
 
   async init() {
@@ -299,6 +305,7 @@ export class Game {
       this.levelManager.setLevel(0);
       this.playerName = 'STUNTPERSON';
       this._tutorialShown = false;
+      this.lives = STARTING_LIVES;
       this.fadeToState(STATES.TUTORIAL, () => {
         this._tutorialTimer = 0;
       });
@@ -621,10 +628,32 @@ export class Game {
     // Check camera/coordinator proximity - fire spreads
     this._checkFireSpread(px, py);
 
-    if (this.player.gel <= 0) {
-      this.endLevel(this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED');
-    } else if (this.player.fuel <= 0) {
-      this.endLevel(this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED_NO_FUEL');
+    if (this.player.gel <= 0 || this.player.fuel <= 0) {
+      if (this.lives > 1 && !this._loseLifeActive) {
+        // Lose a life but keep going
+        this.lives--;
+        this._loseLifeActive = true;
+        this._loseLifeTimer = 2.0;
+        this.player.gel = GEL_MAX * 0.5;
+        this.player.fuel = FUEL_MAX * 0.5;
+        this.camera.shake(6, 0.5);
+        this.particles.emitBurst(this.player.getCenterX(), this.player.getCenterY(), 30, {
+          r: 255, g: 50, b: 50, life: 1.0, spread: 120,
+        });
+      } else if (!this._loseLifeActive) {
+        // No lives left — game over
+        const reason = this.player.gel <= 0
+          ? (this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED')
+          : (this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED_NO_FUEL');
+        this.endLevel(reason);
+      }
+    }
+    // Life-lost flash timer
+    if (this._loseLifeActive) {
+      this._loseLifeTimer -= dt;
+      if (this._loseLifeTimer <= 0) {
+        this._loseLifeActive = false;
+      }
     }
 
     if (this.collisionSystem.isOnWater(this.player) && this.player.isOnFire()) {
@@ -793,9 +822,7 @@ export class Game {
     }
 
     if (this.cameraCar) {
-      if (this.cameraCar.hasReachedPlayer(this.player.y)) {
-        tryEnd('ROADKILL');
-      } else if (this.cameraCar.isPlayerTooFar(this.player.y)) {
+      if (this.cameraCar.isPlayerTooFar(this.player.y)) {
         tryEnd('LOST_THE_SHOT');
       }
     }
@@ -807,7 +834,11 @@ export class Game {
         const d = distance(px, py, entity.getCenterX(), entity.getCenterY());
         if (d < PRINCIPAL_CATCH_RADIUS * TILE_SIZE) {
           entity.catchFire();
-          tryEnd('PA_ATTACK');
+          // Score penalty only — no longer ends the game
+          this.player.extrasBurned++;
+          this.player.resetCombo();
+          this.hitStopFrames = 4;
+          this.soundManager.playPanic();
         }
       } else if (entity instanceof Extra && !(entity instanceof Principal) &&
                  entity.state !== 'ON_FIRE' && entity.state !== 'FALLEN') {
@@ -1034,14 +1065,24 @@ export class Game {
         break;
       case STATES.PLAYING:
         this._renderLevel(ctx);
-        this.hud.render(ctx, this.player, this.levelConfig, this.filmCamera, this.levelTimer);
+        this.hud.render(ctx, this.player, this.levelConfig, this.filmCamera, this.levelTimer, this.lives);
         this._renderSurviveTimer(ctx);
         this._renderOvertimeUI(ctx);
         this.stuntCoordinator.render(ctx, this.camera);
+        if (this._loseLifeActive) {
+          const flash = Math.sin(this._loseLifeTimer * 12) > 0 ? 0.3 : 0;
+          ctx.fillStyle = `rgba(255,0,0,${flash})`;
+          ctx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+          ctx.fillStyle = '#ff4444';
+          ctx.font = 'bold 28px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(`LIFE LOST! ${this.lives} LEFT`, VIEWPORT_WIDTH / 2, VIEWPORT_HEIGHT / 2 - 10);
+          ctx.textAlign = 'left';
+        }
         break;
       case STATES.END_ANIMATION:
         this._renderLevel(ctx);
-        this.hud.render(ctx, this.player, this.levelConfig, this.filmCamera, this.levelTimer);
+        this.hud.render(ctx, this.player, this.levelConfig, this.filmCamera, this.levelTimer, this.lives);
         this._renderEndAnimOverlay(ctx);
         break;
       case STATES.PA_ATTACK:
@@ -1132,16 +1173,16 @@ export class Game {
     }
 
     ctx.font = 'bold 22px monospace';
-    ctx.fillText(`OVERTIME ${multiplierText}`, VIEWPORT_WIDTH / 2, 30);
+    ctx.fillText(`OVERTIME ${multiplierText}`, VIEWPORT_WIDTH / 2, VIEWPORT_HEIGHT - 60);
 
     // Sub-text
     ctx.globalAlpha = 0.6;
     ctx.fillStyle = '#ffffff';
     ctx.font = '12px monospace';
     if (this.overtimeLevel >= 2) {
-      ctx.fillText('PRODUCERS ON SET!', VIEWPORT_WIDTH / 2, 48);
+      ctx.fillText('PRODUCERS ON SET!', VIEWPORT_WIDTH / 2, VIEWPORT_HEIGHT - 42);
     } else {
-      ctx.fillText('RESOURCES DRAINING FASTER', VIEWPORT_WIDTH / 2, 48);
+      ctx.fillText('RESOURCES DRAINING FASTER', VIEWPORT_WIDTH / 2, VIEWPORT_HEIGHT - 42);
     }
 
     ctx.globalAlpha = 1;

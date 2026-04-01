@@ -28,7 +28,7 @@ export class HUD {
     this.goalBannerShown = false;
   }
 
-  render(ctx, player, levelConfig, filmCamera, timer) {
+  render(ctx, player, levelConfig, filmCamera, timer, lives) {
     const barWidth = 240;
     const barHeight = 16;
     const padding = 12;
@@ -69,6 +69,16 @@ export class HUD {
       ctx.fillStyle = '#ffdd00';
       ctx.font = 'bold 14px monospace';
       ctx.fillText(`x${player.comboMultiplier.toFixed(1)}`, VIEWPORT_WIDTH - padding, padding + 56);
+    }
+
+    // Lives
+    if (lives !== undefined) {
+      ctx.fillStyle = '#ff4444';
+      ctx.font = 'bold 14px monospace';
+      ctx.textAlign = 'left';
+      let livesStr = '';
+      for (let i = 0; i < lives; i++) livesStr += '\u2764 ';
+      ctx.fillText(livesStr, x, padding + barHeight * 2 + 28);
     }
 
     // Camera status
