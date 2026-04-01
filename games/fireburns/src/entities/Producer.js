@@ -8,7 +8,7 @@ export class Producer extends Entity {
     this.width = TILE_SIZE;
     this.height = TILE_SIZE * 2;
 
-    this.moveSpeed = 300;
+    this.moveSpeed = 330; // 10% faster
     this.state = 'MOVING'; // MOVING or BLOCKING
     this.blockRange = 3; // stop when this many tiles from player
 
@@ -214,11 +214,11 @@ export class Producer extends Entity {
     const sx = 0;
     const sy = 0;
     const cx = sx + 12;
-    const b = Math.sin(this.breatheTimer * 2) * 0.5;
+    const b = this.state === 'BLOCKING' ? 0 : Math.sin(this.breatheTimer * 2) * 0.5; // frozen still when blocking
 
     const isWalking = this.state !== 'BLOCKING';
     const legSwing = isWalking ? Math.sin(this.animTimer * 30) * 3 : 0;
-    const gesture = this.state === 'BLOCKING' ? Math.sin(this.gestureTimer * 4) * 3 : 0;
+    const gesture = 0; // Producers stand totally still when blocking
 
     // Shadow
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
@@ -355,8 +355,8 @@ export class Producer extends Entity {
     // === BLOCKING SPEECH BUBBLE ===
     if (this.state === 'BLOCKING') {
       const phrases = ['CUT!', 'STOP!', 'NO!', 'HEY!'];
-      const phraseIdx = Math.floor(this.gestureTimer / 2) % phrases.length;
-      const bubbleAlpha = 0.7 + Math.sin(this.gestureTimer * 5) * 0.3;
+      const phraseIdx = Math.floor(this.gestureTimer / 6) % phrases.length; // 3x longer per phrase
+      const bubbleAlpha = 0.85 + Math.sin(this.gestureTimer * 2) * 0.15; // steadier, more visible
 
       ctx.globalAlpha = bubbleAlpha;
       ctx.fillStyle = 'white';
