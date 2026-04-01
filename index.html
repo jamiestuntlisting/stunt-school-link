@@ -830,7 +830,7 @@ window.addEventListener('keydown', e => {
       return;
     }
   }
-  if (e.key === ' ' || e.key === 'e' || e.key === 'E') {
+  if (e.key === ' ' || e.key === 'e' || e.key === 'E' || e.key === 'Enter') {
     e.preventDefault();
     handleAction();
   }
@@ -993,9 +993,9 @@ function setupTouch() {
   // (via isOnActionBtn check) — no separate listener needed to avoid double-firing
 }
 
-// Click anywhere to advance dialogue (works for desktop too)
+// Click anywhere to interact (advance dialogue, talk to NPCs, enter buildings, read signs)
 document.addEventListener('click', e => {
-  if (dialogueActive) {
+  if (dialogueActive || highScoreActive || nearNPC || nearBuilding || nearStuntSign || nearHighScoreSign) {
     handleAction();
   }
 });
