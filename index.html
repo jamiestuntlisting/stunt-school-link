@@ -859,15 +859,20 @@ let joystickTouchId = null;
 
 function setupTouch() {
   if (!isTouchDevice) return;
-  document.getElementById('joystick-area').style.display = 'block';
+  const jArea = document.getElementById('joystick-area');
+  jArea.style.display = 'block';
   // Action button starts hidden - shown when near NPC or building
   document.getElementById('touch-action-btn').style.display = 'none';
 
-  const jArea = document.getElementById('joystick-area');
   const jCanvas = document.getElementById('joystick-canvas');
   const jCtx = jCanvas.getContext('2d');
   const jR = 60; // radius of outer ring
   const knobR = 22; // radius of thumb knob
+
+  // Floating joystick origin (where touch started)
+  let joystickOriginX = 0;
+  let joystickOriginY = 0;
+  const joystickRadius = 60; // pixels from origin to full tilt
 
   function drawJoystick() {
     jCtx.clearRect(0, 0, 120, 120);
@@ -893,35 +898,65 @@ function setupTouch() {
   }
   drawJoystick();
 
-  function getJoystickPos(touch) {
-    const rect = jArea.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    let dx = (touch.clientX - cx) / (rect.width / 2);
-    let dy = (touch.clientY - cy) / (rect.height / 2);
-    // Clamp to circle
+  function updateJoystickFromTouch(touch) {
+    let dx = (touch.clientX - joystickOriginX) / joystickRadius;
+    let dy = (touch.clientY - joystickOriginY) / joystickRadius;
     const dist = Math.sqrt(dx*dx + dy*dy);
     if (dist > 1) { dx /= dist; dy /= dist; }
-    return { x: dx, y: dy };
+    joystick.x = dx;
+    joystick.y = dy;
   }
 
-  jArea.addEventListener('touchstart', e => {
-    e.preventDefault();
-    const touch = e.changedTouches[0];
-    joystickTouchId = touch.identifier;
-    const pos = getJoystickPos(touch);
-    joystick.x = pos.x;
-    joystick.y = pos.y;
-    joystick.active = true;
+  // Floating joystick: touch anywhere on right half of screen to start
+  // Also accept touches directly on the joystick area
+  const wrapper = document.getElementById('game-wrapper');
+  const actBtn = document.getElementById('touch-action-btn');
+
+  function isRightHalf(touch) {
+    const rect = wrapper.getBoundingClientRect();
+    return touch.clientX > rect.left + rect.width * 0.4;
+  }
+
+  function isOnActionBtn(touch) {
+    const rect = actBtn.getBoundingClientRect();
+    return actBtn.style.display !== 'none' &&
+      touch.clientX >= rect.left && touch.clientX <= rect.right &&
+      touch.clientY >= rect.top && touch.clientY <= rect.bottom;
+  }
+
+  // Listen on document for all touch events to ensure we never miss them
+  document.addEventListener('touchstart', e => {
+    if (dialogueActive) {
+      handleAction();
+      return;
+    }
+    for (const touch of e.changedTouches) {
+      // Skip if touching the action button
+      if (isOnActionBtn(touch)) continue;
+      // Start joystick on right-half touch (or on the joystick area itself)
+      if (joystickTouchId === null && isRightHalf(touch)) {
+        e.preventDefault();
+        joystickTouchId = touch.identifier;
+        joystickOriginX = touch.clientX;
+        joystickOriginY = touch.clientY;
+        // Move the joystick visual to where the touch started
+        const wrapRect = wrapper.getBoundingClientRect();
+        jArea.style.right = 'auto';
+        jArea.style.left = (touch.clientX - wrapRect.left - 60) + 'px';
+        jArea.style.top = (touch.clientY - wrapRect.top - 60) + 'px';
+        jArea.style.bottom = 'auto';
+        joystick.x = 0;
+        joystick.y = 0;
+        joystick.active = true;
+      }
+    }
   }, {passive:false});
 
-  jArea.addEventListener('touchmove', e => {
-    e.preventDefault();
+  document.addEventListener('touchmove', e => {
     for (const touch of e.changedTouches) {
       if (touch.identifier === joystickTouchId) {
-        const pos = getJoystickPos(touch);
-        joystick.x = pos.x;
-        joystick.y = pos.y;
+        e.preventDefault();
+        updateJoystickFromTouch(touch);
       }
     }
   }, {passive:false});
@@ -932,23 +967,21 @@ function setupTouch() {
         joystick.x = 0; joystick.y = 0;
         joystick.active = false;
         joystickTouchId = null;
+        // Reset joystick visual position to default bottom-right
+        jArea.style.left = 'auto';
+        jArea.style.top = 'auto';
+        jArea.style.right = '16px';
+        jArea.style.bottom = '16px';
       }
     }
   }
-  jArea.addEventListener('touchend', releaseJoystick, {passive:false});
-  jArea.addEventListener('touchcancel', releaseJoystick, {passive:false});
+  document.addEventListener('touchend', releaseJoystick, {passive:false});
+  document.addEventListener('touchcancel', releaseJoystick, {passive:false});
 
   // Action button (left side)
-  document.getElementById('touch-action-btn').addEventListener('touchstart', e => {
+  actBtn.addEventListener('touchstart', e => {
     e.preventDefault(); handleAction();
   }, {passive:false});
-
-  // Tap anywhere on screen to advance dialogue
-  document.addEventListener('touchstart', e => {
-    if (dialogueActive) {
-      handleAction();
-    }
-  }, {passive:true});
 }
 
 // Click anywhere to advance dialogue (works for desktop too)
