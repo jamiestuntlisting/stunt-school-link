@@ -58,7 +58,8 @@ export class LevelGenerator {
     }
 
     // Interior walls (random placement with corridors)
-    const wallClusters = Math.floor((width * height) / 120);
+    const wallDensityMult = config.wallDensity !== undefined ? config.wallDensity : 1.0;
+    const wallClusters = Math.floor((width * height) / 120 * wallDensityMult);
     for (let i = 0; i < wallClusters; i++) {
       const cx = randomInt(3, width - 4);
       const cy = randomInt(3, height - 4);
@@ -89,7 +90,8 @@ export class LevelGenerator {
 
     // Set obstacles / props scattered around the map
     const propTypes = [TILE_PROP1, TILE_PROP2, TILE_PROP3];
-    const propCount = Math.floor((width * height) / 40);
+    const propDensityMult = config.propDensity !== undefined ? config.propDensity : 1.0;
+    const propCount = Math.floor((width * height) / 40 * propDensityMult);
     for (let i = 0; i < propCount; i++) {
       const px = randomInt(3, width - 4);
       const py = randomInt(3, height - 4);
