@@ -14,7 +14,7 @@ export class GameOverScreen {
     this.playerName = '';
   }
 
-  setup(reason, player, filmCamera, levelConfig, playerName, isGameOver) {
+  setup(reason, player, filmCamera, levelConfig, playerName, isGameOver, isRetry, livesLeft) {
     this.reason = reason;
     this.player = player;
     this.filmCamera = filmCamera;
@@ -23,6 +23,8 @@ export class GameOverScreen {
     this.timer = 0;
     this.playerName = playerName || 'STUNTPERSON';
     this._isGameOver = !!isGameOver; // Use the flag from Game.js (accounts for overtime)
+    this._isRetry = !!isRetry; // Lost a life, retry the same level
+    this._livesLeft = livesLeft || 0;
     this.finalScore = this._calculateScore();
     window._lastFireScore = this.finalScore;
 
@@ -81,7 +83,9 @@ export class GameOverScreen {
 
     // Click/tap anywhere or press Enter to continue (require deliberate tap after delay)
     if (this.timer > 1.5 && input.enterJustPressed) {
-      if (isGameOver) {
+      if (this._isRetry) {
+        return { action: 'RETRY_LEVEL' }; // Replay same level (lost a life)
+      } else if (isGameOver) {
         return { action: 'RETRY' };
       } else {
         return { action: 'NEXT_LEVEL' };
@@ -101,15 +105,24 @@ export class GameOverScreen {
     // Title — use actual game over status (not just the reason's default)
     const isGameOver = this._isGameOver;
     ctx.textAlign = 'center';
-    ctx.fillStyle = isGameOver ? '#ff4444' : '#44ff44';
-    ctx.font = 'bold 28px monospace';
-    ctx.fillText(`${info.icon} ${isGameOver ? info.message : 'LEVEL COMPLETE!'}`, cx, 60);
-
-    // Subtitle
-    if (info.subtitle) {
-      ctx.fillStyle = isGameOver ? '#cc8888' : '#88cc88';
+    if (this._isRetry) {
+      ctx.fillStyle = '#ffaa00';
+      ctx.font = 'bold 28px monospace';
+      ctx.fillText(`${info.icon} LOST A LIFE!`, cx, 60);
+      ctx.fillStyle = '#ffcc66';
       ctx.font = '14px monospace';
-      ctx.fillText(isGameOver ? info.subtitle : 'Made it through overtime!', cx, 84);
+      let livesStr = '';
+      for (let i = 0; i < this._livesLeft; i++) livesStr += '\u2764 ';
+      ctx.fillText(`${livesStr}  ${this._livesLeft} ${this._livesLeft === 1 ? 'life' : 'lives'} remaining`, cx, 84);
+    } else {
+      ctx.fillStyle = isGameOver ? '#ff4444' : '#44ff44';
+      ctx.font = 'bold 28px monospace';
+      ctx.fillText(`${info.icon} ${isGameOver ? info.message : 'LEVEL COMPLETE!'}`, cx, 60);
+      if (info.subtitle) {
+        ctx.fillStyle = isGameOver ? '#cc8888' : '#88cc88';
+        ctx.font = '14px monospace';
+        ctx.fillText(isGameOver ? info.subtitle : 'Made it through overtime!', cx, 84);
+      }
     }
 
     // Paycheck stub
@@ -164,15 +177,18 @@ export class GameOverScreen {
     // Options
     y = VIEWPORT_HEIGHT - 80;
 
-    if (isGameOver) {
+    const blink = Math.sin(Date.now() / 300) > 0;
+    if (this._isRetry) {
+      ctx.fillStyle = '#ffaa00';
+      ctx.font = 'bold 18px monospace';
+      if (blink) ctx.fillText('TRY AGAIN', cx, y);
+    } else if (isGameOver) {
       ctx.fillStyle = '#ffcc00';
       ctx.font = 'bold 18px monospace';
-      const blink = Math.sin(Date.now() / 300) > 0;
       if (blink) ctx.fillText('TRY AGAIN', cx, y);
     } else {
       ctx.fillStyle = '#44ff44';
       ctx.font = 'bold 18px monospace';
-      const blink = Math.sin(Date.now() / 300) > 0;
       if (blink) ctx.fillText('NEXT LEVEL', cx, y);
     }
 

@@ -647,39 +647,17 @@ export class Game {
     this._checkFireSpread(px, py);
 
     if (this.player.gel <= 0 || this.player.fuel <= 0) {
-      // Only lose lives BEFORE overtime — once in overtime, any end = level complete
+      const reason = this.player.gel <= 0
+        ? (this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED')
+        : (this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED_NO_FUEL');
+      // In overtime — any end = level complete, no life lost
+      // Pre-overtime with lives — lose a life, replay the level
+      // Pre-overtime no lives — game over
       const inOvertime = this.surviveTimer >= SURVIVE_TIME;
-      if (inOvertime) {
-        // In overtime — end the level (will be treated as level complete)
-        const reason = this.player.gel <= 0
-          ? (this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED')
-          : (this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED_NO_FUEL');
-        this.endLevel(reason);
-      } else if (this.lives > 1 && !this._loseLifeActive) {
-        // Pre-overtime: lose a life but keep going
+      if (!inOvertime && this.lives > 1) {
         this.lives--;
-        this._loseLifeActive = true;
-        this._loseLifeTimer = 2.0;
-        this.player.gel = GEL_MAX * 0.5;
-        this.player.fuel = FUEL_MAX * 0.5;
-        this.camera.shake(6, 0.5);
-        this.particles.emitBurst(this.player.getCenterX(), this.player.getCenterY(), 30, {
-          r: 255, g: 50, b: 50, life: 1.0, spread: 120,
-        });
-      } else if (!this._loseLifeActive) {
-        // Pre-overtime, no lives left — game over
-        const reason = this.player.gel <= 0
-          ? (this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED')
-          : (this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED_NO_FUEL');
-        this.endLevel(reason);
       }
-    }
-    // Life-lost flash timer
-    if (this._loseLifeActive) {
-      this._loseLifeTimer -= dt;
-      if (this._loseLifeTimer <= 0) {
-        this._loseLifeActive = false;
-      }
+      this.endLevel(reason);
     }
 
     if (this.collisionSystem.isOnWater(this.player) && this.player.isOnFire()) {
@@ -804,8 +782,8 @@ export class Game {
 
     // Coordinator catches fire if performer gets too close - he pats himself out
     if (this.player.isOnFire()) {
-      const coordDist = distance(px, py, this.stuntCoordinator.worldX, this.stuntCoordinator.worldY);
-      if (coordDist < TILE_SIZE * 1.5 && !this.stuntCoordinator.onFire) {
+      const coordDist = distance(px, py, this.stuntCoordinator.worldX, this.stuntCoordinator.worldY + 50);
+      if (coordDist < TILE_SIZE * 3 && !this.stuntCoordinator.onFire) {
         this.stuntCoordinator.catchFire();
         this.particles.emitBurst(this.stuntCoordinator.worldX, this.stuntCoordinator.worldY, 10, {
           r: 255, g: 120, b: 0, life: 0.6, spread: 40,
@@ -951,8 +929,12 @@ export class Game {
       // Making it to overtime means you passed the level no matter what
       const inOvertime = this.surviveTimer >= SURVIVE_TIME;
       const isGameOver = info && info.isGameOver && !inOvertime;
-      this.fadeToState(isGameOver ? STATES.GAME_OVER : STATES.LEVEL_COMPLETE, () => {
-        this.gameOverScreen.setup(this.endReason, this.player, this.filmCamera, this.levelConfig, this.playerName, isGameOver);
+
+      // If died pre-overtime but still have lives, replay the same level
+      const isRetry = isGameOver && this.lives > 0;
+
+      this.fadeToState(isRetry ? STATES.LEVEL_COMPLETE : (isGameOver ? STATES.GAME_OVER : STATES.LEVEL_COMPLETE), () => {
+        this.gameOverScreen.setup(this.endReason, this.player, this.filmCamera, this.levelConfig, this.playerName, isGameOver, isRetry, this.lives);
       });
     }
   }
@@ -1049,6 +1031,11 @@ export class Game {
       } else {
         this.fadeToState(STATES.MENU, () => {});
       }
+    } else if (result.action === 'RETRY_LEVEL') {
+      // Lost a life — replay the same level (don't reset lives)
+      this.fadeToState(STATES.CALL_SHEET, () => {
+        this.callSheet.setLevel(this.levelManager.getCurrentLevelConfig());
+      });
     } else if (result.action === 'RETRY') {
       const checkpoint = this.levelManager.getCheckpointLevel();
       this.levelManager.setLevel(checkpoint);
