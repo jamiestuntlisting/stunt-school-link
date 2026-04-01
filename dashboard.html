@@ -233,7 +233,8 @@ function renderUsers() {
     const breakdown = Object.entries(bd).map(function(e) { return (gameLabels[e[0]] || e[0]) + ': ' + e[1]; }).join(', ') || '-';
     const nbd = st.npcBreakdown || {};
     const npcTalks = Object.entries(nbd).map(function(e) { return e[0] + ': ' + e[1]; }).join(', ') || '-';
-    html += '<tr><td>' + (u.firstName || '') + ' ' + (u.lastName || '') + '</td><td class="dim">' + u.userId + '</td>';
+    var displayName = ((u.firstName || '') + ' ' + (u.lastName || '')).trim() || 'Anonymous (id: ' + u.userId + ')';
+    html += '<tr><td>' + displayName + '</td><td class="dim">' + u.userId + '</td>';
     html += '<td>' + fmtDate(u.firstSeen) + '</td><td>' + ago(u.lastSeen) + '</td>';
     html += '<td class="right">' + (u.visits || 0) + '</td>';
     html += '<td class="right">' + playTime + '</td>';
