@@ -555,7 +555,10 @@ function playNote(freq, start, dur, type='triangle', vol=0.06) {
   osc.stop(audioCtx.currentTime + start + dur);
 }
 
+let _musicLoopTimer = null;
 function playMusic() {
+  // Prevent double-play: if already playing, do nothing
+  if (musicPlaying) return;
   if (!audioCtx) initAudio();
   musicPlaying = true;
   document.getElementById('music-btn').textContent = 'Music: ON';
@@ -706,7 +709,7 @@ function playMusic() {
         if (i % 16 === 0) playNote(600,dt,0.4,'square',0.02);
       }
     }
-    setTimeout(scheduleLoop, loopLen * 1000);
+    _musicLoopTimer = setTimeout(scheduleLoop, loopLen * 1000);
   }
   scheduleLoop();
 }
@@ -714,6 +717,8 @@ function playMusic() {
 function stopMusic() {
   musicPlaying = false;
   document.getElementById('music-btn').textContent = 'Music: OFF';
+  // Cancel any pending loop
+  if (_musicLoopTimer) { clearTimeout(_musicLoopTimer); _musicLoopTimer = null; }
   // Close audio context to immediately silence all scheduled notes
   if (audioCtx) {
     audioCtx.close();
