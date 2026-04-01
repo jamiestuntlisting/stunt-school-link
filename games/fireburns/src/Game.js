@@ -374,13 +374,10 @@ export class Game {
     ctx.font = '13px monospace';
     const lines = [
       { icon: '🔥', color: '#ffaa44', text: 'You are a stunt performer ON FIRE' },
-      { icon: '🕹️', color: '#ffaa44', text: 'Move with arrow keys or swipe' },
       { icon: '💧', color: '#44aaff', text: 'Collect GEL to protect your skin' },
       { icon: '⛽', color: '#ff8833', text: 'Collect FUEL to keep the fire going' },
       { icon: '🎬', color: '#ffcc44', text: 'Stay in the camera frame' },
-      { icon: '👔', color: '#ff4444', text: 'Avoid the producers — they block you' },
       { icon: '⏱️', color: '#44ff88', text: 'Survive until the timer runs out' },
-      { icon: '🌟', color: '#ffdd44', text: 'Overtime = bonus points, but no pickups!' },
     ];
 
     for (const line of lines) {

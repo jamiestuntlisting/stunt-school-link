@@ -305,6 +305,11 @@ canvas {
     <button class="login-btn" id="login-btn">Log In</button>
     <div class="login-or">- or -</div>
     <button class="guest-btn" id="guest-btn">Continue as Guest</button>
+    <div id="guest-name-form" style="display:none; margin-top:14px; text-align:center;">
+      <div class="login-label">Enter your player name:</div>
+      <input type="text" id="guest-name-input" placeholder="Player Name" maxlength="20" autocomplete="off" />
+      <button class="login-btn" id="guest-go-btn">Let's Go!</button>
+    </div>
   </div>
 </div>
 
@@ -468,16 +473,26 @@ document.getElementById('login-password').addEventListener('keydown', function(e
   if (e.key === 'Enter') loginBtn.click();
 });
 
-// Continue as Guest
+// Continue as Guest — show name input
 guestBtn.addEventListener('click', function() {
-  stuntUser.id = '';
-  stuntUser.firstName = 'Guest';
-  stuntUser.lastName = '';
-  localStorage.removeItem('stuntschool_userid');
-  localStorage.removeItem('stuntschool_firstname');
-  localStorage.removeItem('stuntschool_lastname');
-  localStorage.removeItem('stuntschool_playername');
+  guestBtn.style.display = 'none';
+  document.getElementById('guest-name-form').style.display = 'block';
+  document.getElementById('guest-name-input').focus();
+});
+
+document.getElementById('guest-go-btn').addEventListener('click', function() {
+  const name = document.getElementById('guest-name-input').value.trim();
+  if (!name) {
+    document.getElementById('guest-name-input').style.borderColor = '#ff6b6b';
+    return;
+  }
+  const guestId = String(100000 + Math.floor(Math.random() * 900000));
+  setUser(guestId, name, '');
   enterStuntSchool();
+});
+
+document.getElementById('guest-name-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('guest-go-btn').click();
 });
 
 // Initial flow: check URL id or show login
