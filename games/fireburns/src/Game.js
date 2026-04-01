@@ -240,6 +240,13 @@ export class Game {
     if (this.endReason) return;
     this.endReason = reason;
 
+    // Lose a life on any pre-overtime death (but not during overtime — that's a pass)
+    const inOvertime = this.surviveTimer >= SURVIVE_TIME;
+    const info = END_REASONS[reason];
+    if (!inOvertime && info && info.isGameOver && this.lives > 1) {
+      this.lives--;
+    }
+
     if (reason === 'PA_ATTACK') {
       this.paSwarm = new PASwarm();
       this.paSwarm.activate(this.player.getCenterX(), this.player.getCenterY(), this.camera);
@@ -650,13 +657,6 @@ export class Game {
       const reason = this.player.gel <= 0
         ? (this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED')
         : (this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED_NO_FUEL');
-      // In overtime — any end = level complete, no life lost
-      // Pre-overtime with lives — lose a life, replay the level
-      // Pre-overtime no lives — game over
-      const inOvertime = this.surviveTimer >= SURVIVE_TIME;
-      if (!inOvertime && this.lives > 1) {
-        this.lives--;
-      }
       this.endLevel(reason);
     }
 
