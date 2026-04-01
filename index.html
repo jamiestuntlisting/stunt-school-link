@@ -371,7 +371,7 @@ const ctx = canvas.getContext('2d');
 // ---- USER IDENTITY (id from URL, name from MySQL via API) ----
 const urlParams = new URLSearchParams(window.location.search);
 const stuntUser = {
-  id: urlParams.get('id') || localStorage.getItem('stuntschool_userid') || '',
+  id: (urlParams.get('id') || localStorage.getItem('stuntschool_userid') || '').replace(/[^0-9]/g, ''),
   firstName: localStorage.getItem('stuntschool_firstname') || '',
   lastName: localStorage.getItem('stuntschool_lastname') || ''
 };
