@@ -273,6 +273,8 @@ export class InputManager {
     // Consume tap/click after one frame
     this._touchTap = false;
     this._mouseClick = false;
+    this._mouseClickX = 0;
+    this._mouseClickY = 0;
   }
 
   isActionDown() {

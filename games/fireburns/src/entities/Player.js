@@ -127,12 +127,17 @@ export class Player extends Entity {
       this.dirY = input.direction.y;
       if (this.dirX !== 0 || this.dirY !== 0) {
         const n = normalize(this.dirX, this.dirY);
+        const prevX = this.x;
+        const prevY = this.y;
         const resolved = collisionSystem.resolveEntityTile(this, this.x + n.x * this.speed * dt, this.y + n.y * this.speed * dt);
         this.x = resolved.x;
         this.y = resolved.y;
         this.facingX = n.x;
         this.facingY = n.y;
-        this.isMoving = true;
+        // Only count as moving if position actually changed (not running into a wall)
+        const dx = this.x - prevX;
+        const dy = this.y - prevY;
+        this.isMoving = (dx * dx + dy * dy) > 0.01;
       }
     }
 

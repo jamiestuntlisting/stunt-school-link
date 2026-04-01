@@ -79,8 +79,8 @@ export class GameOverScreen {
 
     const isGameOver = this.getIsGameOver();
 
-    // Click/tap anywhere or press Enter to continue
-    if (input.enterJustPressed || (input._mouseClickY > 0 && this.timer > 0.5)) {
+    // Click/tap anywhere or press Enter to continue (require deliberate tap after delay)
+    if (this.timer > 1.5 && input.enterJustPressed) {
       if (isGameOver) {
         return { action: 'RETRY' };
       } else {
