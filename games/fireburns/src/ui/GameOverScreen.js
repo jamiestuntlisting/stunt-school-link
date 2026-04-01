@@ -14,7 +14,7 @@ export class GameOverScreen {
     this.playerName = '';
   }
 
-  setup(reason, player, filmCamera, levelConfig, playerName) {
+  setup(reason, player, filmCamera, levelConfig, playerName, isGameOver) {
     this.reason = reason;
     this.player = player;
     this.filmCamera = filmCamera;
@@ -22,6 +22,7 @@ export class GameOverScreen {
     this.selectedOption = 0;
     this.timer = 0;
     this.playerName = playerName || 'STUNTPERSON';
+    this._isGameOver = !!isGameOver; // Use the flag from Game.js (accounts for overtime)
     this.finalScore = this._calculateScore();
     window._lastFireScore = this.finalScore;
 
@@ -70,48 +71,18 @@ export class GameOverScreen {
   }
 
   getIsGameOver() {
-    return this.reason && END_REASONS[this.reason] && END_REASONS[this.reason].isGameOver;
+    return this._isGameOver;
   }
 
   update(dt, input) {
     this.timer += dt;
 
     const isGameOver = this.getIsGameOver();
-    const optionCount = isGameOver ? 2 : 1;
 
-    if (input.keys['ArrowUp'] || input.keys['KeyW']) {
-      if (!this._prevUp) {
-        this.selectedOption = (this.selectedOption - 1 + optionCount) % optionCount;
-      }
-      this._prevUp = true;
-    } else {
-      this._prevUp = false;
-    }
-
-    if (input.keys['ArrowDown'] || input.keys['KeyS']) {
-      if (!this._prevDown) {
-        this.selectedOption = (this.selectedOption + 1) % optionCount;
-      }
-      this._prevDown = true;
-    } else {
-      this._prevDown = false;
-    }
-
-    // Check for mouse click on options
-    if (input._mouseClickY > 0 && isGameOver) {
-      const baseY = VIEWPORT_HEIGHT - 80;
-      const options = ['TRY AGAIN', 'MAIN MENU'];
-      for (let i = 0; i < options.length; i++) {
-        const optY = baseY + i * 28;
-        if (input._mouseClickY >= optY - 16 && input._mouseClickY <= optY + 8) {
-          this.selectedOption = i;
-        }
-      }
-    }
-
-    if (input.enterJustPressed) {
+    // Click/tap anywhere or press Enter to continue
+    if (input.enterJustPressed || (input._mouseClickY > 0 && this.timer > 0.5)) {
       if (isGameOver) {
-        return this.selectedOption === 0 ? { action: 'RETRY' } : { action: 'MENU' };
+        return { action: 'RETRY' };
       } else {
         return { action: 'NEXT_LEVEL' };
       }
@@ -127,17 +98,18 @@ export class GameOverScreen {
     const info = END_REASONS[this.reason] || { message: 'LEVEL OVER', icon: '', isGameOver: false };
     const cx = VIEWPORT_WIDTH / 2;
 
-    // Title
+    // Title — use actual game over status (not just the reason's default)
+    const isGameOver = this._isGameOver;
     ctx.textAlign = 'center';
-    ctx.fillStyle = info.isGameOver ? '#ff4444' : '#44ff44';
+    ctx.fillStyle = isGameOver ? '#ff4444' : '#44ff44';
     ctx.font = 'bold 28px monospace';
-    ctx.fillText(`${info.icon} ${info.message}`, cx, 60);
+    ctx.fillText(`${info.icon} ${isGameOver ? info.message : 'LEVEL COMPLETE!'}`, cx, 60);
 
-    // Subtitle - reason why
+    // Subtitle
     if (info.subtitle) {
-      ctx.fillStyle = info.isGameOver ? '#cc8888' : '#88cc88';
+      ctx.fillStyle = isGameOver ? '#cc8888' : '#88cc88';
       ctx.font = '14px monospace';
-      ctx.fillText(info.subtitle, cx, 84);
+      ctx.fillText(isGameOver ? info.subtitle : 'Made it through overtime!', cx, 84);
     }
 
     // Paycheck stub
@@ -194,18 +166,15 @@ export class GameOverScreen {
     const isGameOver = this.getIsGameOver();
 
     if (isGameOver) {
-      const options = ['TRY AGAIN', 'MAIN MENU'];
-      for (let i = 0; i < options.length; i++) {
-        const selected = i === this.selectedOption;
-        ctx.fillStyle = selected ? '#ffcc00' : '#888888';
-        ctx.font = `${selected ? 'bold ' : ''}18px monospace`;
-        ctx.fillText(options[i], cx, y + i * 28);
-      }
+      ctx.fillStyle = '#ffcc00';
+      ctx.font = 'bold 18px monospace';
+      const blink = Math.sin(Date.now() / 300) > 0;
+      if (blink) ctx.fillText('TRY AGAIN', cx, y);
     } else {
       ctx.fillStyle = '#44ff44';
       ctx.font = 'bold 18px monospace';
       const blink = Math.sin(Date.now() / 300) > 0;
-      if (blink) ctx.fillText('CLICK OR PRESS ENTER FOR NEXT LEVEL', cx, y);
+      if (blink) ctx.fillText('NEXT LEVEL', cx, y);
     }
 
     ctx.textAlign = 'left';

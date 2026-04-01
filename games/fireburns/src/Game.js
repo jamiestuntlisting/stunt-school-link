@@ -702,7 +702,7 @@ export class Game {
         (this.endReason === 'BURNED' || this.endReason === 'BURNED_NO_FUEL' || this.endReason === 'BURNED_EXTINGUISHED');
       const isGameOver = info && info.isGameOver && !diedInOvertime;
       this.fadeToState(isGameOver ? STATES.GAME_OVER : STATES.LEVEL_COMPLETE, () => {
-        this.gameOverScreen.setup(this.endReason, this.player, this.filmCamera, this.levelConfig, this.playerName);
+        this.gameOverScreen.setup(this.endReason, this.player, this.filmCamera, this.levelConfig, this.playerName, isGameOver);
       });
     }
   }
