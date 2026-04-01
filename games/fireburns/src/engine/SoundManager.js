@@ -68,18 +68,22 @@ export class SoundManager {
     const synth = this.synths[name];
     if (!synth) return;
     try {
-      if (synth.triggerAttackRelease) {
+      const T = this.Tone;
+      // NoiseSynth takes (duration) not (note, duration)
+      if (synth instanceof T.NoiseSynth) {
+        synth.triggerAttackRelease('8n');
+      } else if (synth.triggerAttackRelease) {
         synth.triggerAttackRelease(note || 'C5', '8n');
       }
     } catch {}
   }
 
   playGelPickup() { this.play('bleep', 'E5'); }
-  playFuelPickup() { this.play('whoosh'); }
+  playFuelPickup() { this.play('bleep', 'G5'); }
   playCountdownBeep() { this.play('beep', 'A4'); }
-  playIgnition() { this.play('ignition'); }
-  playSplash() { this.play('splash'); }
-  playExtinguish() { this.play('whoosh'); }
+  playIgnition() { this.play('hit', 'C3'); }
+  playSplash() { this.play('beep', 'E3'); }
+  playExtinguish() { this.play('beep', 'D3'); }
   playHit() { this.play('hit', 'C2'); }
   playPanic() { this.play('alarm', 'G5'); }
   playGameOver() { this.play('hit', 'E1'); }

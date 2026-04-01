@@ -1,6 +1,6 @@
 import { TICK_RATE, VIEWPORT_WIDTH, VIEWPORT_HEIGHT, TILE_SIZE,
   EXTRA_CATCH_RADIUS, PRINCIPAL_CATCH_RADIUS, PROPANE_DRAIN_AMOUNT,
-  TORCH_DRAIN_MULTIPLIER, END_REASONS } from './constants.js';
+  TORCH_DRAIN_MULTIPLIER, END_REASONS, GEL_MAX, FUEL_MAX } from './constants.js';
 import { Canvas } from './engine/Canvas.js';
 import { InputManager } from './engine/InputManager.js';
 import { Camera, CAMERA_MODE } from './engine/Camera.js';
