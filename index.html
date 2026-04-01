@@ -953,6 +953,7 @@ function setupTouch() {
     // Don't intercept touches when high scores overlay is open (let tabs/close work)
     if (highScoreActive) return;
     if (dialogueActive) {
+      e.preventDefault();
       handleAction();
       return;
     }
@@ -1454,11 +1455,25 @@ function showDialogueLine() {
       ? (isTouchDevice ? 'Tap to continue...' : 'Press SPACE for more...')
       : (isTouchDevice ? 'Tap to close' : 'Press SPACE to close');
   box.style.display = 'block';
+  // Show a visual TAP indicator on mobile (non-interactive, just visual)
+  if (isTouchDevice) {
+    const ab = document.getElementById('touch-action-btn');
+    ab.textContent = 'TAP';
+    ab.style.display = 'flex';
+    ab.style.pointerEvents = 'none';
+    ab.style.background = 'rgba(240,230,208,0.2)';
+    ab.style.borderColor = 'rgba(240,230,208,0.4)';
+    ab.style.color = 'rgba(240,230,208,0.7)';
+  }
 }
 function closeDialogue() {
   dialogueActive = false;
   currentDialogue = null;
   document.getElementById('dialogue-box').style.display = 'none';
+  // Restore action button to interactive state
+  const ab = document.getElementById('touch-action-btn');
+  ab.style.pointerEvents = '';
+  ab.style.display = 'none';
 }
 
 // ---- DRAWING ----
