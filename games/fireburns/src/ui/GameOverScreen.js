@@ -163,7 +163,6 @@ export class GameOverScreen {
 
     // Options
     y = VIEWPORT_HEIGHT - 80;
-    const isGameOver = this.getIsGameOver();
 
     if (isGameOver) {
       ctx.fillStyle = '#ffcc00';
