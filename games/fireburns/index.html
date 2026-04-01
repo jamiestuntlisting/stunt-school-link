@@ -22,13 +22,13 @@
       touch-action: none;
       -webkit-user-select: none;
       user-select: none;
-      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     #game-canvas {
       display: block;
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
+      flex-shrink: 0;
     }
     #admin-root {
       display: none;

@@ -194,10 +194,19 @@ export class Game {
 
     this.collisionSystem.setTileMap(this.tileMap);
     this.camera.setMapBounds(this.tileMap.widthPx, this.tileMap.heightPx);
-    this.camera.x = this.player.getCenterX() - VIEWPORT_WIDTH / 2;
-    this.camera.y = this.player.getCenterY() - VIEWPORT_HEIGHT / 2;
-    this.camera.targetZoom = 0.27;
-    this.camera.zoom = 0.27;
+    // Auto-calculate zoom so the map fills the viewport (no black bars)
+    const mapPxW = this.tileMap.widthPx;
+    const mapPxH = this.tileMap.heightPx;
+    const zoomW = VIEWPORT_WIDTH / mapPxW;
+    const zoomH = VIEWPORT_HEIGHT / mapPxH;
+    // Use whichever zoom fills the viewport — bigger zoom means more zoomed in
+    const autoZoom = Math.max(zoomW, zoomH);
+    // Add 10% padding so we don't show the exact edge, clamp between 0.1 and 1.0
+    const finalZoom = Math.max(0.1, Math.min(1.0, autoZoom * 0.92));
+    this.camera.x = this.player.getCenterX() - VIEWPORT_WIDTH / (2 * finalZoom);
+    this.camera.y = this.player.getCenterY() - VIEWPORT_HEIGHT / (2 * finalZoom);
+    this.camera.targetZoom = finalZoom;
+    this.camera.zoom = finalZoom;
     this.ambientLight.setTimeOfDay(this.levelConfig.timeOfDay);
 
     this.camera.setFollowMode();
@@ -638,8 +647,16 @@ export class Game {
     this._checkFireSpread(px, py);
 
     if (this.player.gel <= 0 || this.player.fuel <= 0) {
-      if (this.lives > 1 && !this._loseLifeActive) {
-        // Lose a life but keep going
+      // Only lose lives BEFORE overtime — once in overtime, any end = level complete
+      const inOvertime = this.surviveTimer >= SURVIVE_TIME;
+      if (inOvertime) {
+        // In overtime — end the level (will be treated as level complete)
+        const reason = this.player.gel <= 0
+          ? (this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED')
+          : (this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED_NO_FUEL');
+        this.endLevel(reason);
+      } else if (this.lives > 1 && !this._loseLifeActive) {
+        // Pre-overtime: lose a life but keep going
         this.lives--;
         this._loseLifeActive = true;
         this._loseLifeTimer = 2.0;
@@ -650,7 +667,7 @@ export class Game {
           r: 255, g: 50, b: 50, life: 1.0, spread: 120,
         });
       } else if (!this._loseLifeActive) {
-        // No lives left — game over
+        // Pre-overtime, no lives left — game over
         const reason = this.player.gel <= 0
           ? (this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED')
           : (this._beingSprayedByFireSafety ? 'BURNED_EXTINGUISHED' : 'BURNED_NO_FUEL');
@@ -683,12 +700,16 @@ export class Game {
       { x: TILE_SIZE * 8, y: TILE_SIZE * 8 },
     ];
 
+    // Per-level speed multiplier for fire safeties (gradual difficulty)
+    const levelSpeedMult = (this.levelConfig && this.levelConfig.fireSafetySpeedMult) || 1.0;
+
     for (const off of offsets) {
       const sx = Math.max(TILE_SIZE * 2, Math.min(this.tileMap.widthPx - TILE_SIZE * 3, px + off.x));
       const sy = Math.max(TILE_SIZE * 2, Math.min(this.tileMap.heightPx - TILE_SIZE * 3, py + off.y));
       const angle = Math.atan2(py - sy, px - sx);
       const safety = new FireSafety(sx, sy, angle);
       safety.followSpeed = safety.followSpeed * 3; // Chase safeties move faster
+      safety.speedMultiplier = levelSpeedMult; // Gradual per-level speed scaling
       safety.followDistance = TILE_SIZE * 2; // Get closer before spraying
       this.entities.push(safety);
     }
@@ -926,10 +947,10 @@ export class Game {
       }
 
       const info = END_REASONS[this.endReason];
-      // If overtime has started (survived past SURVIVE_TIME), treat death reasons as level complete
-      const diedInOvertime = this.surviveTimer >= SURVIVE_TIME &&
-        (this.endReason === 'BURNED' || this.endReason === 'BURNED_NO_FUEL' || this.endReason === 'BURNED_EXTINGUISHED');
-      const isGameOver = info && info.isGameOver && !diedInOvertime;
+      // If overtime has started (survived past SURVIVE_TIME), ANY end reason = level complete
+      // Making it to overtime means you passed the level no matter what
+      const inOvertime = this.surviveTimer >= SURVIVE_TIME;
+      const isGameOver = info && info.isGameOver && !inOvertime;
       this.fadeToState(isGameOver ? STATES.GAME_OVER : STATES.LEVEL_COMPLETE, () => {
         this.gameOverScreen.setup(this.endReason, this.player, this.filmCamera, this.levelConfig, this.playerName, isGameOver);
       });

@@ -8,6 +8,9 @@ const TIPS = [
   "RUN IT OUT!",
   "KEEP YOUR FEET MOVING!",
   "DON'T STAND STILL!",
+  "THE GEL IS BURNING FASTER!",
+  "KEEP MOVING TO STAY ON FIRE!",
+  "STAY ON CAMERA!",
 ];
 
 export class StuntCoordinator {

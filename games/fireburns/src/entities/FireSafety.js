@@ -50,6 +50,9 @@ export class FireSafety extends Entity {
     this.sprayParticles = [];
     this.sprayParticleTimer = 0;
 
+    // Speed multiplier (set per level for gradual difficulty)
+    this.speedMultiplier = 1.0;
+
     // Walk animation
     this.walkTimer = 0;
     this.breatheTimer = Math.random() * Math.PI * 2;
@@ -106,8 +109,8 @@ export class FireSafety extends Entity {
     if (dist > 1) {
       const nx = dx / dist;
       const ny = dy / dist;
-      this.x += nx * this.followSpeed * dt;
-      this.y += ny * this.followSpeed * dt;
+      this.x += nx * this.followSpeed * this.speedMultiplier * dt;
+      this.y += ny * this.followSpeed * this.speedMultiplier * dt;
       this.walkTimer += dt;
     }
   }
@@ -169,7 +172,8 @@ export class FireSafety extends Entity {
         if (playerInCone && distToPlayer < this.sprayRange * 0.9) {
           this.aiState = SAFETY_STATE.AIMING;
           this.aimTimer = 0;
-        } else if (distToPlayer < TILE_SIZE * 10) {
+        } else {
+          // Always move toward the player, even if they're standing still
           this.aiState = SAFETY_STATE.FOLLOWING;
         }
         break;

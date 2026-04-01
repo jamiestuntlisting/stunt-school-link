@@ -73,14 +73,24 @@ export class Camera {
     this.x = lerp(this.x, this.targetX, CAMERA_LERP_SPEED);
     this.y = lerp(this.y, this.targetY, CAMERA_LERP_SPEED);
 
-    // Clamp to map bounds
+    // Clamp to map bounds (center if map is smaller than viewport)
     if (this.mapWidth > 0) {
       const vw = VIEWPORT_WIDTH / this.zoom;
       const vh = VIEWPORT_HEIGHT / this.zoom;
-      if (this.x < 0) this.x = 0;
-      if (this.y < 0) this.y = 0;
-      if (this.x + vw > this.mapWidth) this.x = Math.max(0, this.mapWidth - vw);
-      if (this.y + vh > this.mapHeight) this.y = Math.max(0, this.mapHeight - vh);
+      if (vw >= this.mapWidth) {
+        // Map narrower than viewport — center horizontally
+        this.x = (this.mapWidth - vw) / 2;
+      } else {
+        if (this.x < 0) this.x = 0;
+        if (this.x + vw > this.mapWidth) this.x = this.mapWidth - vw;
+      }
+      if (vh >= this.mapHeight) {
+        // Map shorter than viewport — center vertically
+        this.y = (this.mapHeight - vh) / 2;
+      } else {
+        if (this.y < 0) this.y = 0;
+        if (this.y + vh > this.mapHeight) this.y = this.mapHeight - vh;
+      }
     }
 
     // Hard clamp: ensure followed entity never leaves the screen

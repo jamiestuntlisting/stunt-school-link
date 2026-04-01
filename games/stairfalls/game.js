@@ -377,10 +377,10 @@ const LEVELS = [
     { name: 'Vertigo', angleDeg: 50, numSteps: 32, flatLength: 1600, markOffset: 900, sweetSpot: 0.82, greenW: 0.04, yellowExtra: 0.05 },
     // L9-10: Very long
     { name: 'Barely a Ramp', angleDeg: 22, numSteps: 56, flatLength: 1100, markOffset: 500, sweetSpot: 0.88, greenW: 0.04, yellowExtra: 0.04 },
-    { name: 'The Gauntlet', angleDeg: 40, numSteps: 60, flatLength: 1800, markOffset: 1000, sweetSpot: 0.76, greenW: 0.04, yellowExtra: 0.04 },
+    { name: 'The Gauntlet', angleDeg: 40, numSteps: 60, flatLength: 1800, markOffset: 1000, sweetSpot: 0.80, greenW: 0.04, yellowExtra: 0.04 },
     // L11-12: Extreme
-    { name: 'Nosedive', angleDeg: 52, numSteps: 48, flatLength: 1700, markOffset: 950, sweetSpot: 0.75, greenW: 0.03, yellowExtra: 0.04 },
-    { name: 'The Endless Fall', angleDeg: 35, numSteps: 80, flatLength: 2000, markOffset: 1100, sweetSpot: 0.80, greenW: 0.03, yellowExtra: 0.04 },
+    { name: 'Nosedive', angleDeg: 52, numSteps: 48, flatLength: 1700, markOffset: 950, sweetSpot: 0.78, greenW: 0.03, yellowExtra: 0.04 },
+    { name: 'The Endless Fall', angleDeg: 35, numSteps: 80, flatLength: 2000, markOffset: 1100, sweetSpot: 0.79, greenW: 0.03, yellowExtra: 0.04 },
     // L13+: EXTREME — unrealistic, creative, very steep
     { name: 'The Cliff', angleDeg: 65, numSteps: 40, flatLength: 2000, markOffset: 1200, sweetSpot: 0.82, greenW: 0.03, yellowExtra: 0.04 },
     { name: 'Stairway to Hell', angleDeg: 70, numSteps: 60, flatLength: 2500, markOffset: 1500, sweetSpot: 0.90, greenW: 0.03, yellowExtra: 0.03 },
@@ -827,7 +827,7 @@ class PlayScene extends Phaser.Scene {
             fontSize: '52px', fontFamily: 'Georgia, serif', color: '#ff3333',
             stroke: '#000000', strokeThickness: 6,
         }).setOrigin(0.5).setVisible(false).setScrollFactor(0);
-        this.promptText = this.add.text(CONFIG.WIDTH / 2, CONFIG.HEIGHT / 2 + 30, '', {
+        this.promptText = this.add.text(CONFIG.WIDTH / 2, CONFIG.HEIGHT / 2 + 5, '', {
             fontSize: '20px', fontFamily: 'Arial', color: '#aaaacc',
             stroke: '#000000', strokeThickness: 3, align: 'center',
         }).setOrigin(0.5).setVisible(false).setScrollFactor(0);

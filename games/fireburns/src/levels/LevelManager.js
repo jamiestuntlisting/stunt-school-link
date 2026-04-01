@@ -99,10 +99,13 @@ export class LevelManager {
     }
 
     // Fire safeties
+    const safetySpeedMult = config.fireSafetySpeedMult || 1.0;
     for (const pos of ent.fireSafeties) {
       const angles = [0, Math.PI / 2, Math.PI, -Math.PI / 2];
       const angle = angles[Math.floor(Math.random() * angles.length)];
-      entities.push(new FireSafety(pos.col * TILE_SIZE, pos.row * TILE_SIZE, angle));
+      const safety = new FireSafety(pos.col * TILE_SIZE, pos.row * TILE_SIZE, angle);
+      safety.speedMultiplier = safetySpeedMult;
+      entities.push(safety);
     }
 
     // Pickups now spawn randomly during gameplay (handled in Game.js)

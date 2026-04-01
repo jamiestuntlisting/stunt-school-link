@@ -10,18 +10,19 @@
     "wallDensity": 0,
     "propDensity": 0,
     "numFireSafeties": 0,
-    "numGelPickups": 5,
-    "numFuelPickups": 4,
+    "numGelPickups": 8,
+    "numFuelPickups": 6,
     "hasWaterFeatures": false,
     "numTorches": 0,
     "numPropaneCannons": 0,
     "numExtras": 0,
     "numPrincipals": 0,
-    "cameraFOV": 120,
+    "cameraFOV": 160,
     "cameraPanSpeed": 15,
-    "gelDepletionRate": 1.0,
-    "fuelDepletionRate": 1.0,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
+    "fireSafetySpeedMult": 1,
     "timeLimit": 0,
     "title": "BEACH BURN",
     "tagline": "Sun, sand, and spontaneous combustion"
@@ -46,9 +47,10 @@
     "numPrincipals": 0,
     "cameraFOV": 100,
     "cameraPanSpeed": 18,
-    "gelDepletionRate": 1.3,
-    "fuelDepletionRate": 1.3,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
+    "fireSafetySpeedMult": 1,
     "timeLimit": 0,
     "title": "WAREHOUSE INFERNO",
     "tagline": "Crates, forklifts, and a whole lot of fire"
@@ -78,7 +80,8 @@
     "hasCameraCar": false,
     "timeLimit": 0,
     "title": "BACKYARD BBQ BLAZE",
-    "tagline": "The neighbors will definitely call someone"
+    "tagline": "The neighbors will definitely call someone",
+    "fireSafetySpeedMult": 1.05
   },
   {
     "id": 4,
@@ -100,12 +103,13 @@
     "numPrincipals": 0,
     "cameraFOV": 85,
     "cameraPanSpeed": 22,
-    "gelDepletionRate": 2.0,
-    "fuelDepletionRate": 2.0,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 0,
     "title": "PAC-FIRE",
-    "tagline": "Waka waka burn burn"
+    "tagline": "Waka waka burn burn",
+    "fireSafetySpeedMult": 1.1
   },
   {
     "id": 5,
@@ -127,12 +131,13 @@
     "numPrincipals": 0,
     "cameraFOV": 80,
     "cameraPanSpeed": 25,
-    "gelDepletionRate": 2.5,
-    "fuelDepletionRate": 2.5,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 0,
     "title": "STREET HEAT",
-    "tagline": "Downtown is about to get a lot hotter"
+    "tagline": "Downtown is about to get a lot hotter",
+    "fireSafetySpeedMult": 1.15
   },
   {
     "id": 6,
@@ -154,12 +159,13 @@
     "numPrincipals": 0,
     "cameraFOV": 75,
     "cameraPanSpeed": 28,
-    "gelDepletionRate": 3.0,
-    "fuelDepletionRate": 3.0,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 0,
     "title": "POOL PARTY PANIC",
-    "tagline": "Cannonball into chaos"
+    "tagline": "Cannonball into chaos",
+    "fireSafetySpeedMult": 1.2
   },
   {
     "id": 7,
@@ -181,12 +187,13 @@
     "numPrincipals": 1,
     "cameraFOV": 65,
     "cameraPanSpeed": 30,
-    "gelDepletionRate": 3.5,
-    "fuelDepletionRate": 3.5,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 60,
     "title": "PARKOUR PYRE",
-    "tagline": "Hit your marks before the fire hits you"
+    "tagline": "Hit your marks before the fire hits you",
+    "fireSafetySpeedMult": 1.3
   },
   {
     "id": 8,
@@ -208,12 +215,13 @@
     "numPrincipals": 1,
     "cameraFOV": 60,
     "cameraPanSpeed": 32,
-    "gelDepletionRate": 3.5,
-    "fuelDepletionRate": 3.5,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": true,
     "timeLimit": 0,
     "title": "ROOFTOP BLAZE",
-    "tagline": "Race across the skyline while on fire"
+    "tagline": "Race across the skyline while on fire",
+    "fireSafetySpeedMult": 1.35
   },
   {
     "id": 9,
@@ -235,12 +243,13 @@
     "numPrincipals": 2,
     "cameraFOV": 55,
     "cameraPanSpeed": 35,
-    "gelDepletionRate": 4.0,
-    "fuelDepletionRate": 4.0,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 0,
     "title": "WAR ZONE",
-    "tagline": "Explosions are just part of the script"
+    "tagline": "Explosions are just part of the script",
+    "fireSafetySpeedMult": 1.4
   },
   {
     "id": 10,
@@ -250,7 +259,7 @@
     "costumeDescription": "Tattered blood-stained costume with burn holes",
     "mapWidth": 85,
     "mapHeight": 85,
-    "wallDensity": 1.0,
+    "wallDensity": 1,
     "propDensity": 0.7,
     "numFireSafeties": 2,
     "numGelPickups": 3,
@@ -262,12 +271,13 @@
     "numPrincipals": 2,
     "cameraFOV": 50,
     "cameraPanSpeed": 38,
-    "gelDepletionRate": 4.5,
-    "fuelDepletionRate": 4.5,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 0,
     "title": "HORROR HOUSE",
-    "tagline": "The real horror is the fire safety violations"
+    "tagline": "The real horror is the fire safety violations",
+    "fireSafetySpeedMult": 1.5
   },
   {
     "id": 11,
@@ -277,7 +287,7 @@
     "costumeDescription": "Oil-stained mechanic jumpsuit with face shield",
     "mapWidth": 90,
     "mapHeight": 90,
-    "wallDensity": 1.0,
+    "wallDensity": 1,
     "propDensity": 0.8,
     "numFireSafeties": 2,
     "numGelPickups": 2,
@@ -289,12 +299,13 @@
     "numPrincipals": 2,
     "cameraFOV": 45,
     "cameraPanSpeed": 40,
-    "gelDepletionRate": 5.0,
-    "fuelDepletionRate": 5.0,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 0,
     "title": "GAS & FIRE",
-    "tagline": "What could possibly go wrong"
+    "tagline": "What could possibly go wrong",
+    "fireSafetySpeedMult": 1.55
   },
   {
     "id": 12,
@@ -304,7 +315,7 @@
     "costumeDescription": "Burnt apron over a flame-licked chef uniform",
     "mapWidth": 95,
     "mapHeight": 95,
-    "wallDensity": 1.0,
+    "wallDensity": 1,
     "propDensity": 0.8,
     "numFireSafeties": 2,
     "numGelPickups": 2,
@@ -316,12 +327,13 @@
     "numPrincipals": 3,
     "cameraFOV": 42,
     "cameraPanSpeed": 42,
-    "gelDepletionRate": 5.5,
-    "fuelDepletionRate": 5.5,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 0,
     "title": "WAFFLE HOUSE INFERNO",
-    "tagline": "Order up — extra crispy"
+    "tagline": "Order up — extra crispy",
+    "fireSafetySpeedMult": 1.6
   },
   {
     "id": 13,
@@ -331,7 +343,7 @@
     "costumeDescription": "Scorched riot gear with a melted megaphone",
     "mapWidth": 100,
     "mapHeight": 100,
-    "wallDensity": 1.0,
+    "wallDensity": 1,
     "propDensity": 0.9,
     "numFireSafeties": 2,
     "numGelPickups": 2,
@@ -343,12 +355,13 @@
     "numPrincipals": 3,
     "cameraFOV": 38,
     "cameraPanSpeed": 45,
-    "gelDepletionRate": 5.5,
-    "fuelDepletionRate": 5.5,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 0,
     "title": "PROTEST PYRE",
-    "tagline": "This scene is heating up fast"
+    "tagline": "This scene is heating up fast",
+    "fireSafetySpeedMult": 1.7
   },
   {
     "id": 14,
@@ -358,7 +371,7 @@
     "costumeDescription": "Motion capture suit covered in burn marks",
     "mapWidth": 105,
     "mapHeight": 105,
-    "wallDensity": 1.0,
+    "wallDensity": 1,
     "propDensity": 0.9,
     "numFireSafeties": 2,
     "numGelPickups": 2,
@@ -370,12 +383,13 @@
     "numPrincipals": 3,
     "cameraFOV": 35,
     "cameraPanSpeed": 48,
-    "gelDepletionRate": 6.0,
-    "fuelDepletionRate": 6.0,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 45,
     "title": "GREEN SCREEN BURN",
-    "tagline": "They will add the background in post"
+    "tagline": "They will add the background in post",
+    "fireSafetySpeedMult": 1.75
   },
   {
     "id": 15,
@@ -386,7 +400,7 @@
     "mapWidth": 110,
     "mapHeight": 110,
     "wallDensity": 1.1,
-    "propDensity": 1.0,
+    "propDensity": 1,
     "numFireSafeties": 2,
     "numGelPickups": 2,
     "numFuelPickups": 2,
@@ -397,12 +411,13 @@
     "numPrincipals": 4,
     "cameraFOV": 30,
     "cameraPanSpeed": 50,
-    "gelDepletionRate": 6.0,
-    "fuelDepletionRate": 6.0,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": true,
     "timeLimit": 0,
     "title": "BRIDGE BLAZE",
-    "tagline": "No turning back now"
+    "tagline": "No turning back now",
+    "fireSafetySpeedMult": 1.8
   },
   {
     "id": 16,
@@ -413,7 +428,7 @@
     "mapWidth": 115,
     "mapHeight": 115,
     "wallDensity": 1.1,
-    "propDensity": 1.0,
+    "propDensity": 1,
     "numFireSafeties": 2,
     "numGelPickups": 2,
     "numFuelPickups": 2,
@@ -424,12 +439,13 @@
     "numPrincipals": 4,
     "cameraFOV": 28,
     "cameraPanSpeed": 55,
-    "gelDepletionRate": 6.5,
-    "fuelDepletionRate": 6.5,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 0,
     "title": "AISLE OF FIRE",
-    "tagline": "Please remain seated and on fire"
+    "tagline": "Please remain seated and on fire",
+    "fireSafetySpeedMult": 1.85
   },
   {
     "id": 17,
@@ -440,7 +456,7 @@
     "mapWidth": 120,
     "mapHeight": 120,
     "wallDensity": 1.2,
-    "propDensity": 1.0,
+    "propDensity": 1,
     "numFireSafeties": 3,
     "numGelPickups": 3,
     "numFuelPickups": 3,
@@ -451,12 +467,13 @@
     "numPrincipals": 4,
     "cameraFOV": 25,
     "cameraPanSpeed": 58,
-    "gelDepletionRate": 7.0,
-    "fuelDepletionRate": 7.0,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": true,
     "timeLimit": 0,
     "title": "TRAIN YARD TORCH",
-    "tagline": "All aboard the pain train"
+    "tagline": "All aboard the pain train",
+    "fireSafetySpeedMult": 1.9
   },
   {
     "id": 18,
@@ -467,7 +484,7 @@
     "mapWidth": 125,
     "mapHeight": 125,
     "wallDensity": 1.2,
-    "propDensity": 1.0,
+    "propDensity": 1,
     "numFireSafeties": 3,
     "numGelPickups": 3,
     "numFuelPickups": 3,
@@ -478,12 +495,13 @@
     "numPrincipals": 5,
     "cameraFOV": 23,
     "cameraPanSpeed": 60,
-    "gelDepletionRate": 7.0,
-    "fuelDepletionRate": 7.5,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 0,
     "title": "CARNIVAL OF FLAMES",
-    "tagline": "Step right up and catch fire"
+    "tagline": "Step right up and catch fire",
+    "fireSafetySpeedMult": 2
   },
   {
     "id": 19,
@@ -494,7 +512,7 @@
     "mapWidth": 130,
     "mapHeight": 130,
     "wallDensity": 1.3,
-    "propDensity": 1.0,
+    "propDensity": 1,
     "numFireSafeties": 3,
     "numGelPickups": 3,
     "numFuelPickups": 2,
@@ -505,12 +523,13 @@
     "numPrincipals": 5,
     "cameraFOV": 22,
     "cameraPanSpeed": 62,
-    "gelDepletionRate": 7.5,
-    "fuelDepletionRate": 7.5,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 40,
     "title": "EMERGENCY BURNS",
-    "tagline": "Code red in every sense"
+    "tagline": "Code red in every sense",
+    "fireSafetySpeedMult": 2.05
   },
   {
     "id": 20,
@@ -521,7 +540,7 @@
     "mapWidth": 140,
     "mapHeight": 140,
     "wallDensity": 1.3,
-    "propDensity": 1.0,
+    "propDensity": 1,
     "numFireSafeties": 3,
     "numGelPickups": 3,
     "numFuelPickups": 3,
@@ -532,12 +551,13 @@
     "numPrincipals": 5,
     "cameraFOV": 20,
     "cameraPanSpeed": 65,
-    "gelDepletionRate": 8.0,
-    "fuelDepletionRate": 8.0,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": true,
     "timeLimit": 0,
     "title": "STADIUM INFERNO",
-    "tagline": "Fifty thousand fans and one human torch"
+    "tagline": "Fifty thousand fans and one human torch",
+    "fireSafetySpeedMult": 2.1
   },
   {
     "id": 21,
@@ -559,12 +579,13 @@
     "numPrincipals": 6,
     "cameraFOV": 18,
     "cameraPanSpeed": 68,
-    "gelDepletionRate": 8.0,
-    "fuelDepletionRate": 8.5,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 0,
     "title": "JAILBREAK FIRE",
-    "tagline": "Breaking out in flames"
+    "tagline": "Breaking out in flames",
+    "fireSafetySpeedMult": 2.2
   },
   {
     "id": 22,
@@ -586,12 +607,13 @@
     "numPrincipals": 6,
     "cameraFOV": 17,
     "cameraPanSpeed": 70,
-    "gelDepletionRate": 8.5,
-    "fuelDepletionRate": 8.5,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": true,
     "timeLimit": 0,
     "title": "ZERO G FLAMES",
-    "tagline": "In space no one can hear you sizzle"
+    "tagline": "In space no one can hear you sizzle",
+    "fireSafetySpeedMult": 2.3
   },
   {
     "id": 23,
@@ -613,12 +635,13 @@
     "numPrincipals": 6,
     "cameraFOV": 15,
     "cameraPanSpeed": 75,
-    "gelDepletionRate": 9.0,
-    "fuelDepletionRate": 9.0,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": false,
     "timeLimit": 0,
     "title": "HIGH STAKES BURN",
-    "tagline": "The house always burns"
+    "tagline": "The house always burns",
+    "fireSafetySpeedMult": 2.4
   },
   {
     "id": 24,
@@ -640,11 +663,12 @@
     "numPrincipals": 7,
     "cameraFOV": 12,
     "cameraPanSpeed": 80,
-    "gelDepletionRate": 9.5,
-    "fuelDepletionRate": 9.5,
+    "gelDepletionRate": 1.5,
+    "fuelDepletionRate": 1.5,
     "hasCameraCar": true,
     "timeLimit": 0,
     "title": "FINAL INFERNO",
-    "tagline": "The ultimate burn — no turning back"
+    "tagline": "The ultimate burn — no turning back",
+    "fireSafetySpeedMult": 2.5
   }
 ]
