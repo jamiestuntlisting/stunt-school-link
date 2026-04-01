@@ -436,13 +436,14 @@ export class Game {
 
     // ── OBJECTIVES SECTION (right panel) ──
     const rightX = cx + 30;
+    const rightPanelH = panelH + 80;
 
     // Panel background
     ctx.fillStyle = 'rgba(40,20,0,0.4)';
     ctx.strokeStyle = 'rgba(255,170,68,0.3)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.roundRect(rightX, panelY, panelW, panelH, 12);
+    ctx.roundRect(rightX, panelY, panelW, rightPanelH, 12);
     ctx.fill();
     ctx.stroke();
 
@@ -452,17 +453,25 @@ export class Game {
     ctx.fillText('OBJECTIVES', rightX + panelW / 2, panelY + 35);
 
     // Camera
-    ctx.font = '18px monospace';
+    ctx.font = '16px monospace';
     ctx.fillStyle = '#ffcc44';
-    ctx.fillText('🎬 Stay in the camera frame', rightX + panelW / 2, panelY + 80);
+    ctx.fillText('🎬 Stay in the camera frame', rightX + panelW / 2, panelY + 70);
 
     // Survive
     ctx.fillStyle = '#44ff88';
-    ctx.fillText('⏱️ Survive until time runs out', rightX + panelW / 2, panelY + 120);
+    ctx.fillText('⏱️ Survive until time runs out', rightX + panelW / 2, panelY + 105);
+
+    // Fire safeties
+    ctx.fillStyle = '#44aaff';
+    ctx.fillText('🧯 Avoid the fire safeties', rightX + panelW / 2, panelY + 140);
+
+    // Producers
+    ctx.fillStyle = '#ff6644';
+    ctx.fillText('👔 Don\'t let producers stop you', rightX + panelW / 2, panelY + 175);
 
     // Pay
     ctx.fillStyle = '#ffdd44';
-    ctx.fillText('💰 Longer burn = bigger check', rightX + panelW / 2, panelY + 160);
+    ctx.fillText('💰 Longer burn = bigger check', rightX + panelW / 2, panelY + 210);
 
     // ── BOTTOM TIP ──
     ctx.fillStyle = '#775533';
