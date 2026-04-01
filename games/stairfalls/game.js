@@ -2718,6 +2718,18 @@ class PlayScene extends Phaser.Scene {
         const hc = Math.max(1, rawHc - this.protection * 0.5); // pads reduce crash damage
         this.currentHealth = Math.max(0, this.currentHealth - hc);
         this.scoreData = { distFeet: dm+sp, isPerfect: false, crashed: true, crashTier: tier, healthCost: hc };
+        // Report crash event to parent for analytics
+        if (window.parent !== window) {
+            window.parent.postMessage({
+                type: 'stairfall-crash',
+                game: 'stairfalls',
+                crashTier: tier,
+                level: this.currentLevel + 1,
+                healthCost: hc,
+                healthRemaining: this.currentHealth,
+                userId: _stuntUserId || '',
+            }, '*');
+        }
         this.showScore();
     }
 

@@ -938,6 +938,16 @@ function setupTouch() {
       touch.clientY >= rect.top && touch.clientY <= rect.bottom;
   }
 
+  function isOnMusicBtn(touch) {
+    const btn = document.getElementById('music-btn');
+    if (!btn || btn.style.display === 'none') return false;
+    const rect = btn.getBoundingClientRect();
+    // Add generous padding around the small button for easier tapping
+    const pad = 12;
+    return touch.clientX >= rect.left - pad && touch.clientX <= rect.right + pad &&
+      touch.clientY >= rect.top - pad && touch.clientY <= rect.bottom + pad;
+  }
+
   // Listen on document for all touch events to ensure we never miss them
   document.addEventListener('touchstart', e => {
     // Don't intercept touches when high scores overlay is open (let tabs/close work)
@@ -953,6 +963,8 @@ function setupTouch() {
         handleAction();
         return;
       }
+      // Let the music button handle its own click — don't intercept with joystick
+      if (isOnMusicBtn(touch)) return;
       // Start joystick on right-half touch (or on the joystick area itself)
       if (joystickTouchId === null && isRightHalf(touch)) {
         e.preventDefault();
@@ -3427,6 +3439,13 @@ window.addEventListener('message', function(e) {
 
     console.log('Score received from ' + d.game + ': score=' + scoreVal + ' reputation=' + reputationVal + ' money=$' + moneyVal + ' by ' + playerName);
   }
+  // Track stairfalls crash events
+  if (e.data && e.data.type === 'stairfall-crash') {
+    _sessionCrashes.total++;
+    const tier = e.data.crashTier || 1;
+    _sessionCrashes.byTier[tier] = (_sessionCrashes.byTier[tier] || 0) + 1;
+    console.log('Stairfall crash: tier=' + tier + ' level=' + e.data.level + ' total=' + _sessionCrashes.total);
+  }
 });
 
 let gameLoopId = null;
@@ -3460,6 +3479,7 @@ const _sessionId = (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' +
 const _sessionStart = new Date().toISOString();
 const _sessionNPCs = {};     // { npcName: count }
 const _sessionGames = [];    // [{ game, startedAt, endedAt, durationSec, score, highestLevel }]
+const _sessionCrashes = { total: 0, byTier: {1:0, 2:0, 3:0, 4:0, 5:0} }; // stairfalls crash tracking
 let _currentGameSession = null;
 let _latestGameScore = {};   // { gameKey: { score, level } }
 
@@ -3514,6 +3534,7 @@ function _buildHeartbeat() {
     device: _deviceInfo,
     games: _sessionGames,
     npcs: _sessionNPCs,
+    crashes: _sessionCrashes,
   };
 }
 

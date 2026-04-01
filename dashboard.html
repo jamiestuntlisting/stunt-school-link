@@ -25,6 +25,8 @@ h3 { color: #aaa; font-size: 12px; margin: 12px 0 6px; }
 
 table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
 th { text-align: left; color: #88CCFF; font-size: 10px; letter-spacing: 1px; padding: 6px 8px; border-bottom: 1px solid #333; }
+th.sortable-th { cursor: pointer; user-select: none; }
+th.sortable-th:hover { color: #FFD700; background: #1a1a2a; }
 td { padding: 5px 8px; border-bottom: 1px solid #1a1a2a; }
 tr:hover td { background: #111; }
 .right { text-align: right; }
@@ -214,6 +216,9 @@ function render() {
   renderScores();
 }
 
+var userSortCol = 'lastSeen';
+var userSortDir = -1; // -1 = descending, 1 = ascending
+
 function renderUsers() {
   const users = data.users || [];
   const statsArr = data.userStats || [];
@@ -221,22 +226,68 @@ function renderUsers() {
   for (const s of statsArr) { statsMap[s.userId] = s; }
   const gameLabels = { stairfalls: 'Stairs', fireburns: 'Fire', highfalls: 'Falls', stuntcoord: 'Coord' };
 
-  let html = '<div class="section"><h2>REGISTERED USERS (' + users.length + ')</h2><table>';
-  html += '<tr><th>NAME</th><th>USER ID</th><th>FIRST SEEN</th><th>LAST SEEN</th><th class="right">VISITS</th><th class="right">PLAY TIME</th><th class="right">GAMES</th><th>GAME BREAKDOWN</th><th>NPC CONVERSATIONS</th><th>LOCATION</th><th>DEVICE</th></tr>';
-  for (const u of users) {
-    const loc = u.location ? [u.location.city, u.location.region, u.location.country].filter(Boolean).join(', ') : '-';
-    const dev = (u.devices || []).map(d => '<span class="' + (d.mobile ? 'mobile-tag' : 'desktop-tag') + '">' + d.browser + (d.mobile ? ' (mobile)' : '') + '</span>').join(', ') || '-';
-    const st = statsMap[u.userId] || {};
-    const playTime = st.totalPlayTime ? fmtDur(st.totalPlayTime) : '-';
-    const gamesPlayed = st.gamesPlayed || 0;
-    const bd = st.gameBreakdown || {};
-    const breakdown = Object.entries(bd).map(function(e) { return (gameLabels[e[0]] || e[0]) + ': ' + e[1]; }).join(', ') || '-';
-    const nbd = st.npcBreakdown || {};
-    const npcTalks = Object.entries(nbd).map(function(e) { return e[0] + ': ' + e[1]; }).join(', ') || '-';
-    var displayName = ((u.firstName || '') + ' ' + (u.lastName || '')).trim() || 'Anonymous (id: ' + u.userId + ')';
-    html += '<tr><td>' + displayName + '</td><td class="dim">' + u.userId + '</td>';
+  // Build enriched user rows for sorting
+  var rows = users.map(function(u) {
+    var st = statsMap[u.userId] || {};
+    return {
+      user: u,
+      name: ((u.firstName || '') + ' ' + (u.lastName || '')).trim() || 'Anonymous (id: ' + u.userId + ')',
+      userId: u.userId || '',
+      firstSeen: u.firstSeen ? new Date(u.firstSeen).getTime() : 0,
+      lastSeen: u.lastSeen ? new Date(u.lastSeen).getTime() : 0,
+      visits: u.visits || 0,
+      playTime: st.totalPlayTime || 0,
+      games: st.gamesPlayed || 0,
+      location: u.location ? [u.location.city, u.location.region, u.location.country].filter(Boolean).join(', ') : '',
+      stats: st,
+    };
+  });
+
+  // Sort
+  rows.sort(function(a, b) {
+    var va = a[userSortCol], vb = b[userSortCol];
+    if (typeof va === 'string') va = va.toLowerCase();
+    if (typeof vb === 'string') vb = vb.toLowerCase();
+    if (va < vb) return -1 * userSortDir;
+    if (va > vb) return 1 * userSortDir;
+    return 0;
+  });
+
+  var cols = [
+    { key: 'name', label: 'NAME', cls: '' },
+    { key: 'userId', label: 'USER ID', cls: '' },
+    { key: 'firstSeen', label: 'FIRST SEEN', cls: '' },
+    { key: 'lastSeen', label: 'LAST SEEN', cls: '' },
+    { key: 'visits', label: 'VISITS', cls: 'right' },
+    { key: 'playTime', label: 'PLAY TIME', cls: 'right' },
+    { key: 'games', label: 'GAMES', cls: 'right' },
+    { key: 'breakdown', label: 'GAME BREAKDOWN', cls: '' },
+    { key: 'npcTalks', label: 'NPC CONVERSATIONS', cls: '' },
+    { key: 'location', label: 'LOCATION', cls: '' },
+    { key: 'device', label: 'DEVICE', cls: '' },
+  ];
+
+  var html = '<div class="section"><h2>REGISTERED USERS (' + users.length + ')</h2><table>';
+  html += '<tr>';
+  for (var c = 0; c < cols.length; c++) {
+    var arrow = cols[c].key === userSortCol ? (userSortDir === 1 ? ' ▲' : ' ▼') : '';
+    html += '<th class="sortable-th' + (cols[c].cls ? ' ' + cols[c].cls : '') + '" data-sort="' + cols[c].key + '" style="cursor:pointer;user-select:none;">' + cols[c].label + arrow + '</th>';
+  }
+  html += '</tr>';
+
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i], u = r.user, st = r.stats;
+    var loc = u.location ? [u.location.city, u.location.region, u.location.country].filter(Boolean).join(', ') : '-';
+    var dev = (u.devices || []).map(function(d) { return '<span class="' + (d.mobile ? 'mobile-tag' : 'desktop-tag') + '">' + d.browser + (d.mobile ? ' (mobile)' : '') + '</span>'; }).join(', ') || '-';
+    var playTime = st.totalPlayTime ? fmtDur(st.totalPlayTime) : '-';
+    var gamesPlayed = st.gamesPlayed || 0;
+    var bd = st.gameBreakdown || {};
+    var breakdown = Object.entries(bd).map(function(e) { return (gameLabels[e[0]] || e[0]) + ': ' + e[1]; }).join(', ') || '-';
+    var nbd = st.npcBreakdown || {};
+    var npcTalks = Object.entries(nbd).map(function(e) { return e[0] + ': ' + e[1]; }).join(', ') || '-';
+    html += '<tr><td>' + r.name + '</td><td class="dim">' + r.userId + '</td>';
     html += '<td>' + fmtDate(u.firstSeen) + '</td><td>' + ago(u.lastSeen) + '</td>';
-    html += '<td class="right">' + (u.visits || 0) + '</td>';
+    html += '<td class="right">' + r.visits + '</td>';
     html += '<td class="right">' + playTime + '</td>';
     html += '<td class="right">' + gamesPlayed + '</td>';
     html += '<td>' + breakdown + '</td>';
@@ -245,6 +296,21 @@ function renderUsers() {
   }
   html += '</table></div>';
   document.getElementById('tab-users').innerHTML = html;
+
+  // Attach sort handlers
+  var ths = document.querySelectorAll('#tab-users .sortable-th');
+  for (var t = 0; t < ths.length; t++) {
+    ths[t].addEventListener('click', function() {
+      var col = this.getAttribute('data-sort');
+      if (userSortCol === col) {
+        userSortDir *= -1;
+      } else {
+        userSortCol = col;
+        userSortDir = col === 'name' || col === 'userId' || col === 'location' ? 1 : -1;
+      }
+      renderUsers();
+    });
+  }
 }
 
 function renderGames() {
@@ -273,6 +339,28 @@ function renderGames() {
       html += '<div class="chart-row"><div class="chart-name">' + (gameNames[g._id] || g._id) + '</div>';
       html += '<div class="chart-bar"><div class="chart-bar-fill" style="width:' + pct + '%;background:#FFD700;"></div></div>';
       html += '<div class="chart-val">' + g.totalPlays + '</div></div>';
+    }
+    html += '</div>';
+  }
+
+  // Crash stats (stairfalls ladder crashes)
+  const cs = data.crashStats;
+  if (cs && cs.totalCrashes > 0) {
+    html += '<div class="section"><h2>STAIRFALLS CRASH STATS</h2>';
+    html += '<div class="cards" style="max-width:600px;">';
+    html += '<div class="card"><div class="num" style="color:#ff6666;">' + fmt(cs.totalCrashes) + '</div><div class="label">TOTAL CRASHES</div></div>';
+    html += '<div class="card"><div class="num">' + fmt(cs.sessionsWithCrashes) + '</div><div class="label">SESSIONS W/ CRASHES</div></div>';
+    html += '</div>';
+    var tierNames = ['HIT', 'LEAN-BACK', 'TOPPLE', 'FULL CRASH', 'BULLDOZE'];
+    var tierColors = ['#ffcc44', '#ff9944', '#ff6644', '#ff3333', '#cc0000'];
+    var tierVals = [cs.tier1||0, cs.tier2||0, cs.tier3||0, cs.tier4||0, cs.tier5||0];
+    var maxTier = Math.max(...tierVals, 1);
+    html += '<h3>CRASHES BY SEVERITY</h3>';
+    for (var ti = 0; ti < 5; ti++) {
+      var pct = tierVals[ti] / maxTier * 100;
+      html += '<div class="chart-row"><div class="chart-name">Tier ' + (ti+1) + ' - ' + tierNames[ti] + '</div>';
+      html += '<div class="chart-bar"><div class="chart-bar-fill" style="width:' + pct + '%;background:' + tierColors[ti] + ';"></div></div>';
+      html += '<div class="chart-val">' + tierVals[ti] + '</div></div>';
     }
     html += '</div>';
   }
