@@ -45,6 +45,7 @@ const STATES = {
   GAME_OVER: 'GAME_OVER',
   HIGH_SCORE: 'HIGH_SCORE',
   ADMIN_PANEL: 'ADMIN_PANEL',
+  TUTORIAL: 'TUTORIAL',
 };
 
 const END_ANIMS = {
@@ -67,6 +68,9 @@ const CHASE_SAFETY_COUNT = 4;
 const OVERTIME_1_5X_TIME = SURVIVE_TIME;       // 1.5x starts when survive timer ends
 const OVERTIME_2X_TIME = SURVIVE_TIME + 15;     // 2x starts 15s after overtime begins
 const PRODUCER_COUNT = 3;
+// Pickup spawning during gameplay
+const PICKUP_SPAWN_INTERVAL = 4; // seconds between spawns
+const PICKUP_MAX_ON_MAP = 3;     // max pickups visible at once
 
 export class Game {
   constructor() {
@@ -212,6 +216,9 @@ export class Game {
     this.chaseStarted = false;
     this.overtimeLevel = 0;
     this.producersSpawned = false;
+
+    // Pickup spawn timer (pickups appear randomly during play)
+    this.pickupSpawnTimer = 2; // first pickup spawns after 2 seconds
   }
 
   endLevel(reason) {
@@ -281,6 +288,7 @@ export class Game {
       case STATES.LEVEL_COMPLETE:
       case STATES.GAME_OVER: this._updateGameOver(dt); break;
       case STATES.HIGH_SCORE: this._updateHighScore(dt); break;
+      case STATES.TUTORIAL: this._updateTutorial(dt); break;
     }
   }
 
@@ -290,8 +298,9 @@ export class Game {
     if (choice === 'NEW GAME') {
       this.levelManager.setLevel(0);
       this.playerName = 'STUNTPERSON';
-      this.fadeToState(STATES.CALL_SHEET, () => {
-        this.callSheet.setLevel(this.levelManager.getCurrentLevelConfig());
+      this._tutorialShown = false;
+      this.fadeToState(STATES.TUTORIAL, () => {
+        this._tutorialTimer = 0;
       });
     } else if (choice === 'HIGH SCORES') {
       this.fadeToState(STATES.HIGH_SCORE, () => {
@@ -322,6 +331,86 @@ export class Game {
         this.state = STATES.MENU;
       });
     });
+  }
+
+  _updateTutorial(dt) {
+    this.input.setGameControlsVisible(false);
+    this._tutorialTimer += dt;
+    if (this._tutorialTimer > 0.5 && (this.input.enterJustPressed || this.input.actionJustPressed)) {
+      this.fadeToState(STATES.CALL_SHEET, () => {
+        this.callSheet.setLevel(this.levelManager.getCurrentLevelConfig());
+      });
+    }
+  }
+
+  _renderTutorial(ctx) {
+    // Dark background with warm fire tint
+    ctx.fillStyle = '#1a0a00';
+    ctx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+
+    // Subtle warm gradient
+    const grad = ctx.createLinearGradient(0, 0, 0, VIEWPORT_HEIGHT);
+    grad.addColorStop(0, 'rgba(40,15,0,0.5)');
+    grad.addColorStop(1, 'rgba(80,25,0,0.3)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+
+    const cx = VIEWPORT_WIDTH / 2;
+    let y = 40;
+
+    // Title
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ff8844';
+    ctx.font = 'bold 22px monospace';
+    ctx.fillText('HOW TO BURN', cx, y);
+    y += 36;
+
+    // Divider
+    ctx.fillStyle = '#553311';
+    ctx.fillRect(cx - 120, y, 240, 2);
+    y += 24;
+
+    // Instructions
+    ctx.font = '13px monospace';
+    const lines = [
+      { icon: '🔥', color: '#ffaa44', text: 'You are a stunt performer ON FIRE' },
+      { icon: '🕹️', color: '#ffaa44', text: 'Move with arrow keys or swipe' },
+      { icon: '💧', color: '#44aaff', text: 'Collect GEL to protect your skin' },
+      { icon: '⛽', color: '#ff8833', text: 'Collect FUEL to keep the fire going' },
+      { icon: '🎬', color: '#ffcc44', text: 'Stay in the camera frame' },
+      { icon: '👔', color: '#ff4444', text: 'Avoid the producers — they block you' },
+      { icon: '⏱️', color: '#44ff88', text: 'Survive until the timer runs out' },
+      { icon: '🌟', color: '#ffdd44', text: 'Overtime = bonus points, but no pickups!' },
+    ];
+
+    for (const line of lines) {
+      ctx.fillStyle = line.color;
+      ctx.fillText(`${line.icon}  ${line.text}`, cx, y);
+      y += 26;
+    }
+
+    y += 12;
+
+    // Divider
+    ctx.fillStyle = '#553311';
+    ctx.fillRect(cx - 80, y, 160, 1);
+    y += 20;
+
+    // Tip
+    ctx.fillStyle = '#aa7744';
+    ctx.font = 'italic 12px monospace';
+    ctx.fillText('The longer you burn, the bigger the check!', cx, y);
+    y += 36;
+
+    // Tap to continue (blinking)
+    const blink = Math.sin(this._tutorialTimer * 3) > 0;
+    if (blink && this._tutorialTimer > 0.5) {
+      ctx.fillStyle = '#ff8844';
+      ctx.font = '16px monospace';
+      ctx.fillText('TAP TO CONTINUE', cx, VIEWPORT_HEIGHT - 40);
+    }
+
+    ctx.textAlign = 'left';
   }
 
   _updateCallSheet(dt) {
@@ -446,6 +535,15 @@ export class Game {
       this._checkPlayingCollisions(dt);
     }
 
+    // Spawn pickups randomly during play (not in overtime)
+    if (this.surviveTimer < SURVIVE_TIME) {
+      this.pickupSpawnTimer -= dt;
+      if (this.pickupSpawnTimer <= 0) {
+        this.pickupSpawnTimer = PICKUP_SPAWN_INTERVAL;
+        this._spawnRandomPickup();
+      }
+    }
+
     // Pickup collection - always active, not just when on fire
     this._checkPickupCollection();
 
@@ -521,6 +619,34 @@ export class Game {
         }
         entity.collect();
       }
+    }
+  }
+
+  _spawnRandomPickup() {
+    // Don't exceed max pickups on map
+    const activePickups = this.entities.filter(e => e instanceof Pickup && !e.dead);
+    if (activePickups.length >= PICKUP_MAX_ON_MAP) return;
+
+    const px = this.player.getCenterX();
+    const py = this.player.getCenterY();
+
+    // Try to find a valid floor tile near (but not too near) the player
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = TILE_SIZE * (4 + Math.random() * 8); // 4-12 tiles away
+      const tx = px + Math.cos(angle) * dist;
+      const ty = py + Math.sin(angle) * dist;
+      // Clamp to map bounds
+      const col = Math.floor(tx / TILE_SIZE);
+      const row = Math.floor(ty / TILE_SIZE);
+      if (col < 1 || row < 1 || col >= this.tileMap.width - 1 || row >= this.tileMap.height - 1) continue;
+      // Must be a walkable tile (not solid/wall)
+      if (this.tileMap.isSolid(col * TILE_SIZE + TILE_SIZE / 2, row * TILE_SIZE + TILE_SIZE / 2)) continue;
+
+      const type = Math.random() < 0.5 ? PICKUP_TYPE.GEL : PICKUP_TYPE.FUEL;
+      const pickup = new Pickup(col * TILE_SIZE - 8, row * TILE_SIZE - 8, type);
+      this.entities.push(pickup);
+      return;
     }
   }
 
@@ -785,6 +911,9 @@ export class Game {
   }
 
   _updateGameOver(dt) {
+    // Guard: don't process input if already fading out (prevents multi-level skip)
+    if (this.fadeDirection === 1) return;
+
     const result = this.gameOverScreen.update(dt, this.input);
     if (!result) return;
 
@@ -825,6 +954,9 @@ export class Game {
         break;
       case STATES.NAME_ENTRY:
         this._renderNameEntry(ctx);
+        break;
+      case STATES.TUTORIAL:
+        this._renderTutorial(ctx);
         break;
       case STATES.CALL_SHEET:
         this.callSheet.render(ctx);

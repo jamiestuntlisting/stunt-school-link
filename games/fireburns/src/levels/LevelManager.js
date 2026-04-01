@@ -105,13 +105,7 @@ export class LevelManager {
       entities.push(new FireSafety(pos.col * TILE_SIZE, pos.row * TILE_SIZE, angle));
     }
 
-    // Pickups
-    for (const pos of ent.gelPickups) {
-      entities.push(new Pickup(pos.col * TILE_SIZE - 8, pos.row * TILE_SIZE - 8, PICKUP_TYPE.GEL));
-    }
-    for (const pos of ent.fuelPickups) {
-      entities.push(new Pickup(pos.col * TILE_SIZE - 8, pos.row * TILE_SIZE - 8, PICKUP_TYPE.FUEL));
-    }
+    // Pickups now spawn randomly during gameplay (handled in Game.js)
 
     // Extras
     for (const pos of ent.extras) {
