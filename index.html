@@ -817,6 +817,9 @@ const npcTalkCount = {}; // tracks which round each NPC is on
 
 const keys = {};
 window.addEventListener('keydown', e => {
+  // Don't intercept keys when typing in input fields
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   keys[e.key] = true;
   if (highScoreActive) {
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
@@ -835,7 +838,11 @@ window.addEventListener('keydown', e => {
     handleAction();
   }
 });
-window.addEventListener('keyup', e => keys[e.key] = false);
+window.addEventListener('keyup', e => {
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') { keys = {}; return; }
+  keys[e.key] = false;
+});
 
 function handleAction() {
   if (highScoreActive) {
@@ -2683,6 +2690,14 @@ let hsFetching = false;
 
 function dedupeByUserId(scores) {
   // Keep only the highest score per userId (merge name variants for same user)
+  // First normalize: tag any score matching current player with their userId
+  const pid = localStorage.getItem('stuntschool_userid') || '';
+  const pname = localStorage.getItem('stuntschool_playername') || '';
+  for (const s of scores) {
+    if (pid && !s.userId && pname && s.name && s.name.toLowerCase() === pname.toLowerCase()) {
+      s.userId = pid;
+    }
+  }
   const byId = {};
   for (const s of scores) {
     const key = s.userId || s.name || 'anon_' + Math.random();
@@ -2749,8 +2764,13 @@ const playerName = localStorage.getItem('stuntschool_playername') || '';
 const playerUserId = localStorage.getItem('stuntschool_userid') || '';
 
 function isYouScore(s) {
-  if (playerUserId && s.userId) return s.userId === playerUserId;
-  if (playerName && s.name) return s.name.toLowerCase() === playerName.toLowerCase();
+  // Match by userId first (most reliable), then fall back to name
+  if (playerUserId && s.userId && s.userId === playerUserId) return true;
+  // Also match by name if userId is missing from the score
+  if (playerUserId && !s.userId && playerName && s.name && s.name.toLowerCase() === playerName.toLowerCase()) return true;
+  // Also check firstName-only match for "Jamie" vs "James" variants
+  if (playerUserId && s.userId && s.userId === playerUserId) return true;
+  if (!playerUserId && playerName && s.name && s.name.toLowerCase() === playerName.toLowerCase()) return true;
   return false;
 }
 
