@@ -90,6 +90,16 @@
       font-size: 16px;
     }
   </style>
+  <script>
+    // Auth gate: if loaded directly (not in iframe), require login
+    if (window.self === window.top) {
+      var p = new URLSearchParams(window.location.search);
+      var hasId = p.get('id') || localStorage.getItem('stuntschool_userid');
+      if (!hasId) {
+        window.location.href = '/game-login.html?game=fireburns';
+      }
+    }
+  </script>
 </head>
 <body>
   <canvas id="game-canvas"></canvas>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Virtual Stunt School - Log In</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  background: #1a1a1a;
+  height: 100vh; height: 100dvh;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  font-family: monospace;
+  overflow: hidden;
+  -webkit-user-select: none; user-select: none;
+}
+#login-screen {
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  padding: 20px; width: 100%;
+}
+.login-title {
+  font-size: 28px; color: #e8c170;
+  text-shadow: 3px 3px 0 #8b4513, 0 0 20px rgba(232,193,112,0.3);
+  margin-bottom: 8px; text-align: center; line-height: 1.3;
+}
+.login-subtitle {
+  font-size: 14px; color: #7ec8e3; margin-bottom: 30px; text-align: center;
+}
+.login-greeting {
+  font-size: 20px; color: #7ec8e3; margin-bottom: 30px; text-align: center;
+  display: none;
+}
+.login-loading {
+  font-size: 14px; color: #666; margin-bottom: 20px;
+}
+.play-btn {
+  font-family: monospace; font-size: 18px; font-weight: bold;
+  padding: 14px 36px; border-radius: 8px; cursor: pointer;
+  border: 3px solid #e8c170; background: rgba(232,193,112,0.15);
+  color: #e8c170; margin: 8px;
+  text-shadow: 0 0 8px rgba(232,193,112,0.3);
+  transition: all 0.2s;
+  display: none;
+}
+.play-btn:active { background: rgba(232,193,112,0.35); }
+.not-you-btn {
+  font-family: monospace; font-size: 13px;
+  padding: 8px 20px; border-radius: 6px; cursor: pointer;
+  border: 1px solid #555; background: transparent;
+  color: #888; margin-top: 16px;
+  transition: all 0.2s;
+  display: none;
+}
+.not-you-btn:active { color: #aaa; border-color: #888; }
+#login-form {
+  display: none; flex-direction: column; align-items: center;
+  width: 100%; max-width: 300px;
+}
+#login-form .login-label {
+  color: #f0e6d0; font-size: 13px; margin-bottom: 16px; text-align: center; line-height: 1.5;
+}
+#login-form input {
+  font-family: monospace; font-size: 14px; padding: 10px 14px;
+  border: 2px solid #555; border-radius: 6px;
+  background: #222; color: #f0e6d0;
+  width: 100%; margin-bottom: 10px;
+  outline: none;
+}
+#login-form input:focus { border-color: #e8c170; }
+#login-form input::placeholder { color: #555; }
+#login-form .login-btn {
+  font-family: monospace; font-size: 16px; font-weight: bold;
+  padding: 12px 32px; border-radius: 6px; cursor: pointer;
+  border: 2px solid #e8c170; background: rgba(232,193,112,0.15);
+  color: #e8c170; width: 100%; margin-top: 4px;
+  transition: all 0.2s;
+}
+#login-form .login-btn:active { background: rgba(232,193,112,0.35); }
+#login-form .login-error {
+  color: #ff6b6b; font-size: 12px; margin-bottom: 8px; display: none; text-align: center;
+}
+#login-form .login-or {
+  color: #555; font-size: 12px; margin: 14px 0 10px;
+}
+#login-form .guest-btn {
+  font-family: monospace; font-size: 13px;
+  padding: 8px 20px; border-radius: 6px; cursor: pointer;
+  border: 1px solid #555; background: transparent;
+  color: #888; width: 100%;
+  transition: all 0.2s;
+}
+#login-form .guest-btn:active { color: #aaa; border-color: #888; }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-title">StuntListing's<br>Virtual Stunt School</div>
+  <div class="login-subtitle" id="game-name-label"></div>
+  <div class="login-loading" id="loading">Loading...</div>
+  <div class="login-greeting" id="greeting"></div>
+  <button class="play-btn" id="play-btn">Play Now</button>
+  <button class="not-you-btn" id="notyou-btn">Not You?</button>
+  <div id="login-form">
+    <div class="login-label">Log in with your StuntListing account to play as yourself (and maybe win a prize)</div>
+    <div class="login-error" id="login-error"></div>
+    <input type="email" id="login-email" placeholder="Email" autocomplete="email" />
+    <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" />
+    <button class="login-btn" id="login-btn">Log In</button>
+    <div class="login-or">- or -</div>
+    <button class="guest-btn" id="guest-btn">Continue as Guest</button>
+    <div id="guest-name-form" style="display:none; margin-top:14px; text-align:center;">
+      <div class="login-label">Enter your player name:</div>
+      <input type="text" id="guest-name-input" placeholder="Player Name" maxlength="20" autocomplete="off" />
+      <button class="login-btn" id="guest-go-btn">Let's Go!</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const USER_LOOKUP_API = 'https://stunt-scores.vercel.app/api/user-lookup';
+const LOGIN_API = 'https://stunt-scores.vercel.app/api/login';
+
+const GAME_NAMES = {
+  'fireburns': 'Pro Fire Burner',
+  'highfalls': 'Pro High Faller',
+  'stairfalls': 'Stair Falls',
+  'stuntcoord': 'Stunt Coordinator'
+};
+
+// Parse which game to load from ?game= param
+const params = new URLSearchParams(window.location.search);
+const gameKey = params.get('game') || '';
+const gamePath = gameKey ? '/games/' + gameKey + '/' : '/';
+
+// Show game name
+const gameLabel = document.getElementById('game-name-label');
+gameLabel.textContent = GAME_NAMES[gameKey] || 'Virtual Stunt School';
+
+// User state
+const user = {
+  id: params.get('id') || localStorage.getItem('stuntschool_userid') || '',
+  firstName: localStorage.getItem('stuntschool_firstname') || '',
+  lastName: localStorage.getItem('stuntschool_lastname') || ''
+};
+
+const loading = document.getElementById('loading');
+const greeting = document.getElementById('greeting');
+const playBtn = document.getElementById('play-btn');
+const notYouBtn = document.getElementById('notyou-btn');
+const loginForm = document.getElementById('login-form');
+const loginError = document.getElementById('login-error');
+const loginBtn = document.getElementById('login-btn');
+const guestBtn = document.getElementById('guest-btn');
+
+function setUser(id, firstName, lastName) {
+  user.id = String(id);
+  user.firstName = firstName;
+  user.lastName = lastName;
+  localStorage.setItem('stuntschool_userid', user.id);
+  localStorage.setItem('stuntschool_firstname', user.firstName);
+  localStorage.setItem('stuntschool_lastname', user.lastName);
+  localStorage.setItem('stuntschool_playername', user.firstName + ' ' + user.lastName);
+}
+
+function showGreeting(firstName) {
+  loading.style.display = 'none';
+  loginForm.style.display = 'none';
+  greeting.textContent = 'Welcome, ' + firstName + '!';
+  greeting.style.display = 'block';
+  playBtn.style.display = 'inline-block';
+  notYouBtn.style.display = 'inline-block';
+}
+
+function showLoginForm() {
+  loading.style.display = 'none';
+  greeting.style.display = 'none';
+  playBtn.style.display = 'none';
+  notYouBtn.style.display = 'none';
+  loginForm.style.display = 'flex';
+}
+
+function goToGame() {
+  let url = gamePath;
+  if (user.id) {
+    url += '?id=' + encodeURIComponent(user.id);
+  }
+  window.location.href = url;
+}
+
+// Play button
+playBtn.addEventListener('click', goToGame);
+
+// Not You
+notYouBtn.addEventListener('click', showLoginForm);
+
+// Login
+loginBtn.addEventListener('click', function() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) {
+    loginError.textContent = 'Please enter email and password';
+    loginError.style.display = 'block';
+    return;
+  }
+  loginBtn.textContent = 'Logging in...';
+  loginBtn.disabled = true;
+  loginError.style.display = 'none';
+
+  fetch(LOGIN_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  })
+    .then(r => r.json())
+    .then(data => {
+      loginBtn.textContent = 'Log In';
+      loginBtn.disabled = false;
+      if (data.success) {
+        setUser(data.id, data.first_name, data.last_name);
+        showGreeting(data.first_name);
+      } else {
+        loginError.textContent = data.message || 'Login failed';
+        loginError.style.display = 'block';
+      }
+    })
+    .catch(() => {
+      loginBtn.textContent = 'Log In';
+      loginBtn.disabled = false;
+      loginError.textContent = 'Connection error. Try again.';
+      loginError.style.display = 'block';
+    });
+});
+
+// Enter to submit login
+document.getElementById('login-password').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') loginBtn.click();
+});
+
+// Guest flow
+guestBtn.addEventListener('click', function() {
+  guestBtn.style.display = 'none';
+  document.getElementById('guest-name-form').style.display = 'block';
+  document.getElementById('guest-name-input').focus();
+});
+
+document.getElementById('guest-go-btn').addEventListener('click', function() {
+  const name = document.getElementById('guest-name-input').value.trim();
+  if (!name) {
+    document.getElementById('guest-name-input').style.borderColor = '#ff6b6b';
+    return;
+  }
+  const guestId = String(100000 + Math.floor(Math.random() * 900000));
+  setUser(guestId, name, '');
+  goToGame();
+});
+
+document.getElementById('guest-name-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('guest-go-btn').click();
+});
+
+// Initial flow
+if (user.id) {
+  loading.textContent = 'Looking up your profile...';
+  fetch(USER_LOOKUP_API + '?id=' + encodeURIComponent(user.id))
+    .then(r => r.json())
+    .then(data => {
+      if (data.found && data.first_name) {
+        setUser(data.id, data.first_name, data.last_name || '');
+        showGreeting(data.first_name);
+      } else if (user.firstName) {
+        showGreeting(user.firstName);
+      } else {
+        showLoginForm();
+      }
+    })
+    .catch(() => {
+      if (user.firstName) {
+        showGreeting(user.firstName);
+      } else {
+        showLoginForm();
+      }
+    });
+} else if (user.firstName) {
+  showGreeting(user.firstName);
+} else {
+  showLoginForm();
+}
+</script>
+</body>
+</html>

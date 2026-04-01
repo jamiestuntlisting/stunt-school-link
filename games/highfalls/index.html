@@ -5,6 +5,16 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>StuntListing's Pro Stunt High Faller</title>
+    <script>
+      // Auth gate: if loaded directly (not in iframe), require login
+      if (window.self === window.top) {
+        var p = new URLSearchParams(window.location.search);
+        var hasId = p.get('id') || localStorage.getItem('stuntschool_userid');
+        if (!hasId) {
+          window.location.href = '/game-login.html?game=highfalls';
+        }
+      }
+    </script>
     <script type="module" crossorigin src="./assets/index-hScUIgIS.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-CSvXcQer.css">
   </head>
