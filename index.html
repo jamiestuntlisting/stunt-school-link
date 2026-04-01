@@ -987,10 +987,8 @@ function setupTouch() {
   document.addEventListener('touchend', releaseJoystick, {passive:false});
   document.addEventListener('touchcancel', releaseJoystick, {passive:false});
 
-  // Action button (left side)
-  actBtn.addEventListener('touchstart', e => {
-    e.preventDefault(); handleAction();
-  }, {passive:false});
+  // Action button touch is handled by the document-level touchstart above
+  // (via isOnActionBtn check) — no separate listener needed to avoid double-firing
 }
 
 // Click anywhere to advance dialogue (works for desktop too)
