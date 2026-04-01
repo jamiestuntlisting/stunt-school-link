@@ -113,7 +113,8 @@ export class GameOverScreen {
       ctx.font = '14px monospace';
       let livesStr = '';
       for (let i = 0; i < this._livesLeft; i++) livesStr += '\u2764 ';
-      ctx.fillText(`${livesStr}  ${this._livesLeft} ${this._livesLeft === 1 ? 'life' : 'lives'} remaining`, cx, 84);
+      const livesMsg = this._livesLeft === 1 ? 'LAST LIFE!' : `${this._livesLeft} lives remaining`;
+      ctx.fillText(`${livesStr}  ${livesMsg}`, cx, 84);
     } else {
       ctx.fillStyle = isGameOver ? '#ff4444' : '#44ff44';
       ctx.font = 'bold 28px monospace';

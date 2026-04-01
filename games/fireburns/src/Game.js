@@ -243,7 +243,7 @@ export class Game {
     // Lose a life on any pre-overtime death (but not during overtime — that's a pass)
     const inOvertime = this.surviveTimer >= SURVIVE_TIME;
     const info = END_REASONS[reason];
-    if (!inOvertime && info && info.isGameOver && this.lives > 1) {
+    if (!inOvertime && info && info.isGameOver && this.lives > 0) {
       this.lives--;
     }
 
@@ -1038,6 +1038,7 @@ export class Game {
     } else if (result.action === 'RETRY') {
       const checkpoint = this.levelManager.getCheckpointLevel();
       this.levelManager.setLevel(checkpoint);
+      this.lives = STARTING_LIVES;
       this.fadeToState(STATES.CALL_SHEET, () => {
         this.callSheet.setLevel(this.levelManager.getCurrentLevelConfig());
       });
