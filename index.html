@@ -933,6 +933,8 @@ function setupTouch() {
 
   // Listen on document for all touch events to ensure we never miss them
   document.addEventListener('touchstart', e => {
+    // Don't intercept touches when high scores overlay is open (let tabs/close work)
+    if (highScoreActive) return;
     if (dialogueActive) {
       handleAction();
       return;
