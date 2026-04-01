@@ -79,7 +79,7 @@ tr:hover td { background: #111; }
 
   <div style="margin-bottom:12px;text-align:right;">
     <label style="cursor:pointer;font-size:11px;color:#888;user-select:none;">
-      <input type="checkbox" id="exclude-dev" onchange="render()" style="cursor:pointer;"> Exclude dev (id 33)
+      <input type="checkbox" id="exclude-dev" onchange="loadData()" style="cursor:pointer;"> Exclude dev (id 33)
     </label>
   </div>
 
@@ -139,7 +139,9 @@ async function loadData() {
   try {
     const indicator = document.getElementById('auto-refresh-indicator');
     if (indicator) indicator.textContent = 'loading...';
-    const res = await fetch(API + '?password=' + encodeURIComponent(password));
+    const excludeBox = document.getElementById('exclude-dev');
+    const excludeParam = (excludeBox && excludeBox.checked) ? '&exclude=33' : '';
+    const res = await fetch(API + '?password=' + encodeURIComponent(password) + excludeParam);
     if (res.status === 401) {
       document.getElementById('login-error').textContent = 'Wrong password';
       password = '';
@@ -213,7 +215,7 @@ function render() {
 }
 
 function renderUsers() {
-  const users = (data.users || []).filter(u => !isExcluded(u.userId));
+  const users = data.users || [];
   const statsArr = data.userStats || [];
   const statsMap = {};
   for (const s of statsArr) { statsMap[s.userId] = s; }
@@ -340,7 +342,7 @@ function renderLocations() {
 }
 
 function renderSessions() {
-  const sessions = (data.recentSessions || []).filter(s => !isExcluded(s.userId));
+  const sessions = data.recentSessions || [];
   let html = '<div class="section"><h2>RECENT SESSIONS (' + sessions.length + ')</h2><table id="sessions-table">';
   html += '<tr><th>USER</th><th>STARTED</th><th class="right">DURATION</th><th class="right">GAMES</th><th class="right">NPC TALKS</th></tr>';
   for (let i = 0; i < sessions.length; i++) {
