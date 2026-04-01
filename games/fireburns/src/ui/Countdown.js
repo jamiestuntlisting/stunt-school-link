@@ -3,8 +3,8 @@ import { VIEWPORT_WIDTH, VIEWPORT_HEIGHT } from '../constants.js';
 export class Countdown {
   constructor() {
     this.timer = 0;
-    this.duration = 4.0; // 3-2-1-BURN
-    this.phase = 0; // 0=3, 1=2, 2=1, 3=BURN
+    this.duration = 2.6; // 2-1-BURN
+    this.phase = 0; // 0=2, 1=1, 2=BURN
     this.done = false;
     this.soundManager = null;
   }
@@ -21,14 +21,12 @@ export class Countdown {
     if (this.done) return true;
     this.timer += dt;
 
-    if (this.timer < 1.0) {
+    if (this.timer < 0.8) {
       this.phase = 0;
-    } else if (this.timer < 2.0) {
+    } else if (this.timer < 1.6) {
       this.phase = 1;
-    } else if (this.timer < 3.0) {
+    } else if (this.timer < 2.4) {
       this.phase = 2;
-    } else if (this.timer < 3.8) {
-      this.phase = 3;
     } else {
       this.done = true;
       return true;
@@ -36,7 +34,7 @@ export class Countdown {
 
     // Play sound on phase change
     if (this.phase !== this._lastPhase && this.soundManager) {
-      if (this.phase < 3) {
+      if (this.phase < 2) {
         this.soundManager.playCountdownBeep();
       } else {
         this.soundManager.playBurnBeep();
@@ -57,18 +55,18 @@ export class Countdown {
     const cx = VIEWPORT_WIDTH / 2;
     const cy = VIEWPORT_HEIGHT / 2;
 
-    const labels = ['3', '2', '1', 'BURN!'];
+    const labels = ['2', '1', 'BURN!'];
     const text = labels[this.phase];
 
     // Scale animation
-    const phaseT = (this.timer % 1.0);
-    const scale = 1.0 + Math.sin(phaseT * Math.PI) * 0.2;
+    const phaseT = (this.timer % 0.8);
+    const scale = 1.0 + Math.sin(phaseT / 0.8 * Math.PI) * 0.2;
 
     ctx.save();
     ctx.translate(cx, cy);
     ctx.scale(scale, scale);
 
-    if (this.phase < 3) {
+    if (this.phase < 2) {
       // Number
       ctx.fillStyle = '#ffcc00';
       ctx.font = 'bold 80px monospace';

@@ -49,15 +49,15 @@ const STATES = {
 };
 
 const END_ANIMS = {
-  BURNED: { duration: 1.5, label: 'BURNED UP!' },
-  BURNED_NO_FUEL: { duration: 1.5, label: 'FLAME OUT!' },
-  BURNED_EXTINGUISHED: { duration: 1.5, label: 'EXTINGUISHED!' },
-  EXTINGUISHED: { duration: 1.5, label: 'PUT OUT!' },
-  FELL_IN_WATER: { duration: 1.5, label: 'FELL IN WATER!' },
-  ROADKILL: { duration: 1.2, label: 'ROADKILL!' },
-  LOST_THE_SHOT: { duration: 1.2, label: 'LOST THE SHOT!' },
-  CLEAN_BURN: { duration: 2.0, label: 'CLEAN BURN!' },
-  SAFE_OUT: { duration: 1.5, label: 'SAFE OUT!' },
+  BURNED: { duration: 1.0, label: 'BURNED UP!' },
+  BURNED_NO_FUEL: { duration: 1.0, label: 'FLAME OUT!' },
+  BURNED_EXTINGUISHED: { duration: 1.0, label: 'EXTINGUISHED!' },
+  EXTINGUISHED: { duration: 1.0, label: 'PUT OUT!' },
+  FELL_IN_WATER: { duration: 1.0, label: 'FELL IN WATER!' },
+  ROADKILL: { duration: 0.8, label: 'ROADKILL!' },
+  LOST_THE_SHOT: { duration: 0.8, label: 'LOST THE SHOT!' },
+  CLEAN_BURN: { duration: 1.2, label: 'CLEAN BURN!' },
+  SAFE_OUT: { duration: 1.0, label: 'SAFE OUT!' },
 };
 
 // How long the performer must survive before fire safeties chase
@@ -284,7 +284,7 @@ export class Game {
 
   update(dt) {
     if (this.fadeDirection !== 0) {
-      this.fadeAlpha += this.fadeDirection * dt * 3;
+      this.fadeAlpha += this.fadeDirection * dt * 5;
       if (this.fadeAlpha >= 1.0 && this.fadeDirection === 1) {
         this.fadeAlpha = 1.0;
         if (this.fadeCallback) {

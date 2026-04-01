@@ -49,7 +49,7 @@ export class Player extends Entity {
 
     // Lighting-up animation
     this.lightUpTimer = 0;
-    this.lightUpDuration = 1.8;
+    this.lightUpDuration = 1.2;
 
     this.secondsOnFire = 0;
     this.extrasBurned = 0;

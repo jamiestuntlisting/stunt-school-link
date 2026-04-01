@@ -82,7 +82,7 @@ export class GameOverScreen {
     const isGameOver = this.getIsGameOver();
 
     // Click/tap anywhere or press Enter to continue (require deliberate tap after delay)
-    if (this.timer > 1.5 && input.enterJustPressed) {
+    if (this.timer > 0.8 && input.enterJustPressed) {
       if (this._isRetry) {
         return { action: 'RETRY_LEVEL' }; // Replay same level (lost a life)
       } else if (isGameOver) {
@@ -115,14 +115,23 @@ export class GameOverScreen {
       for (let i = 0; i < this._livesLeft; i++) livesStr += '\u2764 ';
       const livesMsg = this._livesLeft === 1 ? 'LAST LIFE!' : `${this._livesLeft} lives remaining`;
       ctx.fillText(`${livesStr}  ${livesMsg}`, cx, 84);
-    } else {
-      ctx.fillStyle = isGameOver ? '#ff4444' : '#44ff44';
+    } else if (isGameOver) {
+      ctx.fillStyle = '#ff4444';
       ctx.font = 'bold 28px monospace';
-      ctx.fillText(`${info.icon} ${isGameOver ? info.message : 'LEVEL COMPLETE!'}`, cx, 60);
+      ctx.fillText(`${info.icon} GAME OVER`, cx, 60);
       if (info.subtitle) {
-        ctx.fillStyle = isGameOver ? '#cc8888' : '#88cc88';
+        ctx.fillStyle = '#cc8888';
         ctx.font = '14px monospace';
-        ctx.fillText(isGameOver ? info.subtitle : 'Made it through overtime!', cx, 84);
+        ctx.fillText(info.subtitle, cx, 84);
+      }
+    } else {
+      ctx.fillStyle = '#44ff44';
+      ctx.font = 'bold 28px monospace';
+      ctx.fillText(`${info.icon} LEVEL COMPLETE!`, cx, 60);
+      if (info.subtitle) {
+        ctx.fillStyle = '#88cc88';
+        ctx.font = '14px monospace';
+        ctx.fillText('Made it through overtime!', cx, 84);
       }
     }
 
@@ -186,7 +195,7 @@ export class GameOverScreen {
     } else if (isGameOver) {
       ctx.fillStyle = '#ffcc00';
       ctx.font = 'bold 18px monospace';
-      if (blink) ctx.fillText('TRY AGAIN', cx, y);
+      if (blink) ctx.fillText('START AGAIN', cx, y);
     } else {
       ctx.fillStyle = '#44ff44';
       ctx.font = 'bold 18px monospace';
