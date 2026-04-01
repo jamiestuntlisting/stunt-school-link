@@ -782,8 +782,8 @@ export class Game {
 
     // Coordinator catches fire if performer gets too close - he pats himself out
     if (this.player.isOnFire()) {
-      const coordDist = distance(px, py, this.stuntCoordinator.worldX, this.stuntCoordinator.worldY + 50);
-      if (coordDist < TILE_SIZE * 3 && !this.stuntCoordinator.onFire) {
+      const coordDist = distance(px, py, this.stuntCoordinator.worldX, this.stuntCoordinator.worldY + 90);
+      if (coordDist < TILE_SIZE * 5 && !this.stuntCoordinator.onFire) {
         this.stuntCoordinator.catchFire();
         this.particles.emitBurst(this.stuntCoordinator.worldX, this.stuntCoordinator.worldY, 10, {
           r: 255, g: 120, b: 0, life: 0.6, spread: 40,
